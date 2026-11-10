@@ -1,0 +1,49 @@
+<div class="app-container">
+  <!-- Header Component -->
+  <app-header
+    [appTitle]="title"
+    [currentUser]="currentUser()"
+    (navigationClick)="onNavigation($event)"
+    (loginClick)="onHeaderLogin()"
+    (logoutClick)="onHeaderLogout()"
+  ></app-header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Welcome Component -->
+    <app-welcome
+      [user]="currentUser()"
+      [showPersonalizedMessage]="showPersonalizedMessage()"
+      (userInteraction)="onUserInteraction($event)"
+      (logout)="onLogout()"
+    ></app-welcome>
+
+    <!-- Controls Section -->
+    <section class="controls-section">
+      <h3>Controles de Demostración</h3>
+
+      <div class="control-group">
+        <label>
+          <input
+            type="checkbox"
+            [checked]="showPersonalizedMessage()"
+            (change)="togglePersonalizedMessage()"
+          />
+          Mostrar mensaje personalizado
+        </label>
+      </div>
+
+      <div class="control-group">
+        <h4>Estado Actual:</h4>
+        <ul>
+          <li>Usuario: {{ currentUser()?.name || 'No autenticado' }}</li>
+          <li>Rol: {{ currentUser()?.role || 'N/A' }}</li>
+          <li>
+            Mensaje personalizado: {{ showPersonalizedMessage() ? 'Activo' :
+            'Inactivo' }}
+          </li>
+        </ul>
+      </div>
+    </section>
+  </main>
+</div>

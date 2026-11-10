@@ -4,3 +4,4 @@ dist/
 audit.json
 audit.err
 .vscode/.history/
+serve.log

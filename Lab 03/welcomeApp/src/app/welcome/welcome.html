@@ -1,0 +1,86 @@
+<div class="welcome-container">
+  <div class="welcome-header">
+    <h1>{{ greeting() }}, {{ userDisplayName() }}!</h1>
+    <p class="time">Hora actual: {{ timeString() }}</p>
+  </div>
+
+  <div class="welcome-content">
+    <!-- Mensaje personalizado condicional -->
+    @if (showPersonalizedMessage && user) {
+      <div class="personalized-message">
+        <h2>Bienvenido de vuelta</h2>
+        <p>Email: {{ user.email }}</p>
+        <p>
+          Rol:
+          <span class="role-badge" [style.color]="getRoleColor()">
+            {{ user.role | titlecase }}
+          </span>
+        </p>
+      </div>
+    }
+
+    <!-- Mensaje para invitados -->
+    @if (!user) {
+      <div class="guest-message">
+        <h2>¡Bienvenido!</h2>
+        <p>Parece que eres nuevo aquí. ¡Nos alegra tenerte!</p>
+      </div>
+    }
+
+    <!-- Contador de visitas -->
+    <div class="visit-counter">
+      <p>
+        Visitas en esta sesión:
+        <strong>{{ visitCount() }}</strong>
+      </p>
+      <button (click)="incrementVisits()" class="btn btn-secondary">
+        Incrementar contador
+      </button>
+    </div>
+
+    <!-- Acciones disponibles -->
+    <div class="actions">
+      <h3>¿Qué te gustaría hacer?</h3>
+
+      <div class="action-buttons">
+        <button (click)="onButtonClick('explore')" class="btn btn-primary">
+          Explorar la aplicación
+        </button>
+
+        <button
+          (click)="onButtonClick('profile')"
+          class="btn btn-info"
+          [disabled]="!user"
+        >
+          Ver perfil
+        </button>
+
+        <button
+          (click)="onButtonClick('settings')"
+          class="btn btn-warning"
+          [disabled]="!user"
+        >
+          Configuración
+        </button>
+
+        @if (user) {
+          <button
+            (click)="onButtonClick('logout')"
+            class="btn btn-danger"
+          >
+            Cerrar sesión
+          </button>
+        }
+
+        @if (!user) {
+          <button
+            (click)="onButtonClick('login')"
+            class="btn btn-success"
+          >
+            Iniciar sesión
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+</div>

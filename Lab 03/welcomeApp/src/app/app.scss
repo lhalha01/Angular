@@ -1,0 +1,82 @@
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
+  padding: 2rem 0;
+  background-color: #f8f9fa;
+}
+
+.controls-section {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.controls-section h3 {
+  margin-top: 0;
+  color: #495057;
+  border-bottom: 2px solid #e9ecef;
+  padding-bottom: 0.5rem;
+}
+
+.control-group {
+  margin: 1.5rem 0;
+}
+
+.control-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.control-group input[type="checkbox"] {
+  transform: scale(1.2);
+}
+
+.control-group h4 {
+  margin: 0 0 0.5rem 0;
+  color: #6c757d;
+}
+
+.control-group ul {
+  margin: 0;
+  padding-left: 1.5rem;
+  color: #495057;
+}
+
+.control-group li {
+  margin: 0.25rem 0;
+}
+
+.app-footer {
+  background-color: #343a40;
+  color: white;
+  text-align: center;
+  padding: 1rem;
+  margin-top: auto;
+}
+
+.app-footer p {
+  margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .main-content {
+    padding: 1rem 0;
+  }
+
+  .controls-section {
+    margin: 1rem;
+    padding: 1rem;
+  }
+}
