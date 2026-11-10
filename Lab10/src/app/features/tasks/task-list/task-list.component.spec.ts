@@ -41,10 +41,6 @@ describe('TaskListComponent', () => {
   function helpers(fixture: ReturnType<typeof TestBed.createComponent<TaskListComponent>>, http: HttpTestingController) {
     const el = fixture.nativeElement as HTMLElement;
     const ids = () => Array.from(el.querySelectorAll('.meta')).map((m) => m.textContent?.trim().split(' ')[0]);
-    const comp = fixture.componentInstance as unknown as {
-      userFilter: { set(v: number | 'all'): void };
-      filter: { set(v: 'all' | 'completed' | 'pending'): void };
-    };
     const type = (value: string) => {
       const input = el.querySelector<HTMLInputElement>('input[type="search"]')!;
       input.value = value;
@@ -59,7 +55,7 @@ describe('TaskListComponent', () => {
       select.dispatchEvent(new Event('change'));
       fixture.detectChanges();
     };
-    return { fixture, el, http, ids, comp, type, selectByLabel };
+    return { fixture, el, http, ids, type, selectByLabel };
   }
 
   describe('filters', () => {
@@ -68,17 +64,15 @@ describe('TaskListComponent', () => {
     });
 
     it('filters by user', () => {
-      const { fixture, ids, comp } = setup();
-      comp.userFilter.set(2);
-      fixture.detectChanges();
+      const { ids, selectByLabel } = setup();
+      selectByLabel('Filtrar por usuario', 'Ervin');
       expect(ids()).toEqual(['#3']);
     });
 
     it('combines user and status filters', () => {
-      const { fixture, ids, comp } = setup();
-      comp.userFilter.set(1);
-      comp.filter.set('pending');
-      fixture.detectChanges();
+      const { ids, selectByLabel } = setup();
+      selectByLabel('Filtrar por usuario', 'Leanne');
+      selectByLabel('Filtrar por estado', 'Pendientes');
       expect(ids()).toEqual(['#2']);
     });
 

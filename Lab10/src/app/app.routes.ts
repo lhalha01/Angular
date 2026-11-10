@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { taskResolver } from './features/tasks/task.resolver';
 
 /** Componentes cargados de forma diferida (un chunk por pantalla). */
 export const routes: Routes = [
@@ -17,8 +18,12 @@ export const routes: Routes = [
         loadComponent: () => import('./features/tasks/task-list/task-list.component').then((m) => m.TaskListComponent),
       },
       {
-        // Ruta padre sin componente: sus hijas heredan el parámetro :id.
+        // Ruta padre sin componente: resuelve la tarea una vez y sus hijas la heredan
+        // (junto al parámetro :id) como inputs. 'always' vuelve a resolverla tras editar,
+        // para que el detalle no muestre datos antiguos.
         path: ':id',
+        resolve: { task: taskResolver },
+        runGuardsAndResolvers: 'always',
         children: [
           {
             path: '',

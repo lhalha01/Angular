@@ -45,14 +45,36 @@ Todas se cargan con `loadComponent` (lazy) y el `:id` llega como `input()` (`wit
 - **Avisos** al crear, editar, cambiar estado, borrar y restaurar.
 - **Tema claro/oscuro** desde la barra superior (se recuerda; por defecto, el del sistema).
 - Contador de resultados, "Limpiar filtros" y estados vacíos con acción.
-## Estructura
+
+## Estructura y decisiones de diseño
 
 ```text
 src/app
-├── core/          modelos y servicios (TaskService, UserService)
-├── shared/        pipe `taskStatus` y directiva `appHighlightUser`
-└── features/      home y tasks (list, detail, edit, add, task-form reutilizable)
+├── core/                  modelos y servicios sin interfaz (Task, User, Confirm, Toast, Theme)
+├── shared/                piezas reutilizables sin lógica de negocio
+│   ├── paginator/         <app-paginator> + paginate() (lógica pura)
+│   ├── state-message/     tarjeta de estado: cargando, error, vacío, no encontrado
+│   ├── confirm-dialog/    modal sobre <dialog>
+│   ├── toast/             avisos
+│   └── pipes/, directives/
+└── features/
+    ├── home/
+    └── tasks/
+        ├── task-list/     pantalla; task-query.ts (filtrar/ordenar) y task-list-params.ts (URL) son funciones puras
+        ├── task-card/     tarjeta/fila de una tarea (componente "tonto": inputs y outputs)
+        ├── task-toolbar/  búsqueda, filtros, orden y vista (cada control es un `model()`)
+        ├── task-form/     formulario compartido por "crear" y "editar"
+        ├── task-detail/, task-edit/, add-task/
+        ├── task-actions.service.ts   confirmar + modificar + avisar (+ Deshacer)
+        └── task.resolver.ts          carga la tarea de `:id` antes de activar la ruta
 ```
+
+- **La lista solo orquesta** (≈190 líneas): guarda el estado de la consulta, lo sincroniza con la URL y delega.
+  La lógica está en funciones puras con tests propios; la presentación, en componentes pequeños.
+- **Resolver**: `tasks/:id` resuelve la tarea una vez y las rutas hijas (detalle y edición) la reciben como
+  `input()`. `runGuardsAndResolvers: 'always'` la recarga tras editar, para no mostrar datos antiguos.
+- **Pruebas**: `npm test` ejecuta ≈130 tests (cobertura ≈95 % de líneas), incluida una prueba de integración
+  de las rutas reales.
 
 - **TaskService**: `HttpClient` + estado en `signal`. El POST/PUT/DELETE se envía a la API, pero el
   resultado local manda (la API responde siempre `id: 201`, que se ignora para no duplicar ids).

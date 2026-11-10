@@ -1,16 +1,16 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { switchMap } from 'rxjs';
-import { TaskService } from '../../../core/services/task.service';
+import { Task } from '../../../core/models/task.model';
 import { UserService } from '../../../core/services/user.service';
 import { HighlightUserDirective } from '../../../shared/directives/highlight-user.directive';
 import { TaskStatusPipe } from '../../../shared/pipes/task-status.pipe';
+import { StateMessageComponent } from '../../../shared/state-message/state-message.component';
 
+/** Ruta hija `/tasks/:id`. La tarea la carga `taskResolver`. */
 @Component({
   selector: 'app-task-detail',
-  imports: [RouterLink, DatePipe, TaskStatusPipe, HighlightUserDirective],
+  imports: [RouterLink, DatePipe, TaskStatusPipe, HighlightUserDirective, StateMessageComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @let t = task();
@@ -30,13 +30,11 @@ import { TaskStatusPipe } from '../../../shared/pipes/task-status.pipe';
 
         <div class="actions">
           <a class="btn btn-secondary" routerLink="/tasks">Volver</a>
-          <a class="btn btn-primary" [routerLink]="['edit']">Editar</a>
+          <a class="btn btn-primary" [routerLink]="['/tasks', t.id, 'edit']">Editar</a>
         </div>
       </section>
-    } @else if (t === null) {
-      <div class="card state">No se encontró la tarea. <a routerLink="/tasks">Volver a la lista</a></div>
     } @else {
-      <div class="card state">Cargando tarea...</div>
+      <app-state-message>No se encontró la tarea. <a routerLink="/tasks">Volver a la lista</a></app-state-message>
     }
   `,
   styles: `
@@ -47,16 +45,10 @@ import { TaskStatusPipe } from '../../../shared/pipes/task-status.pipe';
   `,
 })
 export class TaskDetailComponent {
-  private readonly tasks = inject(TaskService);
   private readonly users = inject(UserService);
 
-  /** Llega del parámetro `:id` gracias a withComponentInputBinding(). */
-  readonly id = input.required<string>();
-
-  /** `undefined` = cargando, `null` = no existe. */
-  protected readonly task = toSignal(
-    toObservable(this.id).pipe(switchMap((id) => this.tasks.getTaskById(Number(id)))),
-  );
+  /** Llega resuelta por la ruta (`null` si el id no existe). */
+  readonly task = input.required<Task | null>();
 
   protected userName(userId: number): string {
     return this.users.nameOf(userId);

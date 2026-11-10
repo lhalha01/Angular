@@ -98,6 +98,7 @@ input.ng-invalid.ng-touched, select.ng-invalid.ng-touched { border-color: var(--
 .btn-danger { background: var(--btn-danger-bg); color: var(--btn-danger-text); }
 
 .state { max-width: 620px; margin: 3rem auto; text-align: center; color: var(--text-muted); }
+.state .actions { justify-content: center; }
 
 /* Usada por HighlightUserDirective */
 .user-highlight { background: var(--highlight-bg); border-left: 4px solid var(--highlight-border); padding-left: 0.5rem; }
