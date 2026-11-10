@@ -1,0 +1,54 @@
+import { Component, Input, Output, EventEmitter } from "@angular/core";
+import { CommonModule } from "@angular/common";
+
+@Component({
+  selector: "app-header",
+  imports: [CommonModule],
+  template: `
+   <header class="app-header">
+  <div class="header-content">
+    <div class="logo">
+      <h1>{{ appTitle }}</h1>
+    </div>
+    <nav class="navigation">
+      <ul>
+        <li><a (click)="navigate('home')">Inicio</a></li>
+        <li><a (click)="navigate('counter')">Counter</a></li>
+      </ul>
+    </nav>
+    <div class="user-actions">
+      <span *ngIf="currentUser" class="user-name">
+        Hola, {{ currentUser.name }}
+      </span>
+      <button *ngIf="!currentUser" (click)="login()" class="btn-login">
+        Iniciar Sesión
+      </button>
+      <button *ngIf="currentUser" (click)="logout()" class="btn-logout">
+        Cerrar Sesión
+      </button>
+    </div>
+  </div>
+</header>
+  `,
+  styleUrls: ["./header.scss"],
+})
+export class Header {
+  @Input() appTitle = 'Avanade';
+  @Input() currentUser: any = null;
+
+  @Output() navigationClick = new EventEmitter<string>();
+  @Output() loginClick = new EventEmitter<void>();
+  @Output() logoutClick = new EventEmitter<void>();
+
+  navigate(section: string) {
+    this.navigationClick.emit(section);
+  }
+
+  login() {
+    this.loginClick.emit();
+  }
+
+  logout() {
+    this.logoutClick.emit();
+  }
+}
