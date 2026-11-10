@@ -1,0 +1,31 @@
+* { box-sizing: border-box; }
+html { font-family: Arial, sans-serif; background: #020817; color: #e2e8f0; }
+body { margin: 0; min-height: 100vh; }
+button, input, select { font: inherit; }
+a { color: inherit; }
+
+/* ---- Estilos compartidos por todas las pantallas ---- */
+.card { background: rgba(15, 23, 42, 0.72); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 1rem; padding: 1.5rem; }
+.card--narrow { max-width: 620px; margin: 3rem auto; }
+.eyebrow { color: #a5b4fc; text-transform: uppercase; letter-spacing: 0.15em; font-size: 0.72rem; margin: 0; }
+h2 { color: #f8fafc; margin: 0.5rem 0 1.5rem; }
+
+.field { display: flex; flex-direction: column; margin-bottom: 1rem; }
+.field label { color: #cbd5e1; margin-bottom: 0.4rem; }
+.field--inline { flex-direction: row; align-items: center; gap: 0.7rem; }
+.field--inline label { margin-bottom: 0; }
+input:not([type='checkbox']), select { background: rgba(15, 23, 42, 0.9); color: white; border: 1px solid rgba(148, 163, 184, 0.25); border-radius: 0.75rem; padding: 0.8rem 0.9rem; }
+input.ng-invalid.ng-touched, select.ng-invalid.ng-touched { border-color: #f87171; }
+.error { color: #fca5a5; font-size: 0.82rem; margin-top: 0.35rem; }
+
+.actions { display: flex; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap; }
+.btn { display: inline-flex; align-items: center; justify-content: center; border: none; border-radius: 0.75rem; padding: 0.75rem 1rem; font-weight: 600; cursor: pointer; text-decoration: none; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-primary { background: linear-gradient(135deg, #8b5cf6, #2563eb); color: white; }
+.btn-secondary { background: rgba(96, 165, 250, 0.15); color: #dbeafe; }
+.btn-danger { background: rgba(239, 68, 68, 0.15); color: #fecaca; }
+
+.state { max-width: 620px; margin: 3rem auto; text-align: center; color: #cbd5e1; }
+
+/* Usada por HighlightUserDirective */
+.user-highlight { background: rgba(16, 185, 129, 0.15); border-left: 4px solid #10b981; padding-left: 0.5rem; }
