@@ -1,0 +1,32 @@
+.form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem 1.25rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+
+  label { font-weight: 600; }
+
+  input {
+    padding: 0.6rem 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 1rem;
+
+    &.ng-invalid.ng-touched {
+      border-color: #dc3545;
+    }
+  }
+}
+
+.error { color: #dc3545; }
+
+.actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+}
