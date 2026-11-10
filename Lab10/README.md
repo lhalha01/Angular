@@ -50,7 +50,10 @@ Todas se cargan con `loadComponent` (lazy) y el `:id` llega como `input()` (`wit
 
 ```text
 src/app
-├── core/                  modelos y servicios sin interfaz (Task, User, Confirm, Toast, Theme)
+├── core/                  modelos y servicios sin interfaz
+│   ├── in-memory-resource.ts   base común de TaskService y UserService (estado en memoria)
+│   ├── ignore-server-outcome.ts  qué se hace con las respuestas de la API simulada
+│   └── storage.service.ts      localStorage que nunca lanza (tema y vista)
 ├── shared/                piezas reutilizables sin lógica de negocio
 │   ├── paginator/         <app-paginator> + paginate() (lógica pura)
 │   ├── state-message/     tarjeta de estado: cargando, error, vacío, no encontrado
@@ -73,7 +76,12 @@ src/app
   La lógica está en funciones puras con tests propios; la presentación, en componentes pequeños.
 - **Resolver**: `tasks/:id` resuelve la tarea una vez y las rutas hijas (detalle y edición) la reciben como
   `input()`. `runGuardsAndResolvers: 'always'` la recarga tras editar, para no mostrar datos antiguos.
-- **Pruebas**: `npm test` ejecuta ≈130 tests (cobertura ≈95 % de líneas), incluida una prueba de integración
+- **Estado en memoria sin duplicar**: `TaskService` y `UserService` extienden `InMemoryResource` (carga, signal,
+  búsqueda por id, añadir/actualizar/borrar/restaurar) y solo aportan su vocabulario y sus reglas.
+- **API simulada**: las escrituras (POST/PUT/DELETE) se envían, pero `ignoreServerOutcome` hace explícito, en un único
+  sitio, que ni su respuesta ni su error cambian el resultado. Con una API real habría que quitarlo para que los
+  errores llegaran al usuario. Los errores de la carga inicial sí se muestran (con "Reintentar").
+- **Pruebas**: `npm test` ejecuta ≈155 tests (cobertura ≈98 % de líneas), incluida una prueba de integración
   de las rutas reales.
 
 - **TaskService**: `HttpClient` + estado en `signal`. El POST/PUT/DELETE se envía a la API, pero el

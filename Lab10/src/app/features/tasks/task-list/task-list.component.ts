@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, linkedSignal, signal, untracked } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Task, TaskFilter } from '../../../core/models/task.model';
+import { StorageService } from '../../../core/services/storage.service';
 import { TaskService } from '../../../core/services/task.service';
 import { UserService } from '../../../core/services/user.service';
 import { PaginatorComponent } from '../../../shared/paginator/paginator.component';
@@ -13,6 +14,7 @@ import { readParams, toParams } from './task-list-params';
 import { filterAndSort, hasActiveFilters, SortKey, TaskQuery, ViewMode } from './task-query';
 
 const VIEW_KEY = 'taskView';
+const VIEWS: readonly ViewMode[] = ['cards', 'list'];
 
 /**
  * Pantalla de la lista. Solo orquesta: guarda el estado de la consulta (filtros, orden,
@@ -105,6 +107,7 @@ export class TaskListComponent {
   private readonly userService = inject(UserService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly storage = inject(StorageService);
   protected readonly actions = inject(TaskActions);
 
   protected readonly loadStatus = this.taskService.status;
@@ -120,7 +123,7 @@ export class TaskListComponent {
   protected readonly user = signal<number | 'all'>(this.initial.user);
   protected readonly sort = signal<SortKey>(this.initial.sort);
   protected readonly pageSize = signal<PageSize>(this.initial.pageSize);
-  protected readonly view = signal<ViewMode>(this.savedView());
+  protected readonly view = signal<ViewMode>(this.storage.getOneOf(VIEW_KEY, VIEWS) ?? 'cards');
 
   private readonly query = computed<TaskQuery>(() => ({
     search: this.search(),
@@ -154,14 +157,7 @@ export class TaskListComponent {
     });
 
     // Se recuerda la vista elegida entre sesiones.
-    effect(() => {
-      const view = this.view();
-      try {
-        localStorage.setItem(VIEW_KEY, view);
-      } catch {
-        // Sin almacenamiento: la elección solo dura la sesión.
-      }
-    });
+    effect(() => this.storage.set(VIEW_KEY, this.view()));
   }
 
   protected userName(userId: number): string {
@@ -181,13 +177,5 @@ export class TaskListComponent {
 
   protected retry(): void {
     this.taskService.reload();
-  }
-
-  private savedView(): ViewMode {
-    try {
-      return localStorage.getItem(VIEW_KEY) === 'list' ? 'list' : 'cards';
-    } catch {
-      return 'cards';
-    }
   }
 }

@@ -1,96 +1,48 @@
-import { HttpClient } from '@angular/common/http';
-import { inject, Injectable, signal } from '@angular/core';
-import { catchError, map, Observable, of, tap } from 'rxjs';
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
 import { Task, TaskDraft } from '../models/task.model';
-
-export type LoadStatus = 'loading' | 'ready' | 'error';
+import { InMemoryResource } from './in-memory-resource';
 
 /**
- * JSONPlaceholder no persiste los cambios, así que el estado vive en memoria (signal).
- * Las peticiones POST/PUT/DELETE se envían igualmente para practicar, pero el resultado
- * que manda es el local: ni sus respuestas ni sus fallos alteran la lista.
+ * Tareas de JSONPlaceholder (`/todos`), con el estado en memoria. Ver `InMemoryResource`
+ * para la carga, la búsqueda por id y cómo se tratan las escrituras simuladas.
  */
 @Injectable({ providedIn: 'root' })
-export class TaskService {
-  private readonly http = inject(HttpClient);
-  private readonly apiUrl = 'https://jsonplaceholder.typicode.com/todos';
+export class TaskService extends InMemoryResource<Task> {
+  protected readonly apiUrl = 'https://jsonplaceholder.typicode.com/todos';
 
-  private readonly _tasks = signal<Task[]>([]);
-  private readonly _status = signal<LoadStatus>('loading');
-
-  readonly tasks = this._tasks.asReadonly();
-  readonly status = this._status.asReadonly();
+  readonly tasks = this.items;
 
   constructor() {
+    super();
     this.reload();
   }
 
-  /** Carga (o recarga) las tareas iniciales desde la API. */
-  reload(): void {
-    this._status.set('loading');
-    this.http.get<Task[]>(this.apiUrl).subscribe({
-      next: (tasks) => {
-        const now = Date.now();
-        // La API no trae fecha: se simula una distinta por tarea para poder mostrarla.
-        this._tasks.set(tasks.map((t) => ({ ...t, createdAt: new Date(now - t.id * 60_000).toISOString() })));
-        this._status.set('ready');
-      },
-      error: () => this._status.set('error'),
-    });
-  }
-
-  /**
-   * Devuelve la tarea o `null` si no existe.
-   * Una vez cargada la lista, la memoria es la fuente de verdad (así una tarea borrada no
-   * "resucita" desde la API); antes de eso, se consulta `/todos/:id` directamente.
-   */
   getTaskById(id: number): Observable<Task | null> {
-    if (!Number.isInteger(id)) return of(null);
-    if (this._status() === 'ready') return of(this._tasks().find((t) => t.id === id) ?? null);
-    return this.http.get<Task>(`${this.apiUrl}/${id}`).pipe(catchError(() => of(null)));
+    return this.getById(id);
   }
 
+  /** Las nuevas van arriba. Se ignora el id de la respuesta (la API siempre devuelve 201). */
   addTask(draft: TaskDraft): Observable<Task> {
-    const task: Task = { ...draft, id: this.nextId(), createdAt: new Date().toISOString() };
-    return this.http.post<Task>(this.apiUrl, task).pipe(
-      catchError(() => of(task)),
-      // La API responde siempre con id 201: se ignora su respuesta para no duplicar ids.
-      map(() => task),
-      tap((created) => this._tasks.update((list) => [created, ...list])),
-    );
+    return this.addItem({ ...draft, id: this.nextId(), createdAt: new Date().toISOString() }, 'start');
   }
 
   updateTask(task: Task): Observable<Task> {
-    return this.http.put<Task>(`${this.apiUrl}/${task.id}`, task).pipe(
-      catchError(() => of(task)),
-      map(() => task),
-      tap((updated) => this._tasks.update((list) => list.map((t) => (t.id === updated.id ? updated : t)))),
-    );
+    return this.updateItem(task);
   }
 
   deleteTask(id: number): Observable<void> {
-    return this.http.delete(`${this.apiUrl}/${id}`).pipe(
-      catchError(() => of(null)),
-      tap(() => this._tasks.update((list) => list.filter((t) => t.id !== id))),
-      map(() => undefined),
-    );
+    return this.deleteItem(id);
   }
 
-  /**
-   * Reinserta una tarea borrada en su posición original (para "Deshacer").
-   * Si su id ya está en uso (p. ej. se creó otra tarea reutilizándolo) no hace nada.
-   */
+  /** Reinserta una tarea borrada en su posición original (para "Deshacer"). */
   restoreTask(task: Task, index: number): boolean {
-    if (this._tasks().some((t) => t.id === task.id)) return false;
-    this._tasks.update((list) => {
-      const copy = [...list];
-      copy.splice(Math.min(index, copy.length), 0, task);
-      return copy;
-    });
-    return true;
+    return this.restoreItem(task, index);
   }
 
-  private nextId(): number {
-    return this._tasks().reduce((max, t) => Math.max(max, t.id), 0) + 1;
+  /** La API no trae fecha de creación: se simula una distinta por tarea para poder mostrarla. */
+  protected override prepare(tasks: Task[]): Task[] {
+    const now = Date.now();
+    return tasks.map((task) => ({ ...task, createdAt: new Date(now - task.id * 60_000).toISOString() }));
   }
 }
