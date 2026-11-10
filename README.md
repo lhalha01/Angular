@@ -15,7 +15,7 @@ carpeta `Lab NN`, con su enunciado (`Lab NN.md`) y, cuando corresponde, el proye
 | Nivel | Carpeta | Laboratorios | Práctica final | Estado |
 | --- | --- | --- | --- | --- |
 | Básico | `1-Basico` | Lab 01 a Lab 09 | Lab 10 y Lab 10.1 | Completado |
-| Intermedio | `2-Intermedio` | Lab 11 a Lab 19 | Lab 20 y Lab 20.1 | Pendiente (enunciados por añadir) |
+| Intermedio | `2-Intermedio` | Lab 11 a Lab 19 | Lab 20 y Lab 20.1 | En preparación (enunciados añadidos, sin proyectos) |
 | Avanzado | `3-Avanzado` | Lab 21 a Lab 28 | Lab 29 | Pendiente (enunciados por añadir) |
 
 ## Proyectos del nivel Básico
@@ -38,32 +38,26 @@ Cada laboratorio parte del código del anterior (cabecera, rutas y componentes a
 
 ## Estructura de dependencias
 
-Cada **nivel** es su propio *workspace* de npm: tiene un `package.json`, un `package-lock.json` y un único
-`node_modules` en la carpeta del nivel (por ejemplo, `1-Basico/package.json`). No hay `package.json` en la
-raíz del repositorio.
-
 Hay dos tipos de proyecto, según cómo gestionan `node_modules`:
 
 | Tipo | Proyectos | `node_modules` y `package-lock.json` |
 | --- | --- | --- |
-| **Compartidos** (npm workspaces) | Laboratorios normales de cada nivel | Uno solo por nivel, en la carpeta del nivel |
+| **Compartidos** (npm workspaces) | Laboratorios normales de un nivel | Uno solo por nivel, en la carpeta del nivel |
 | **Autónomos** | Prácticas finales: Lab 10, Lab 10.1, Lab 20, Lab 20.1 y Lab 29 | Propios, dentro de la carpeta de cada proyecto |
 
-Los laboratorios normales comparten una única instalación dentro de su nivel para ahorrar espacio en disco.
+Los laboratorios normales de un nivel pueden compartir una única instalación para ahorrar espacio en disco.
 Las prácticas finales son entregables, por lo que son independientes: se pueden copiar a otro repositorio y
 funcionan con su propio `package.json` y `package-lock.json`.
 
-El grupo compartido de cada nivel se define en el campo `workspaces` de su `package.json`:
+Estado actual por nivel:
 
-| Nivel | `package.json` | Patrón de `workspaces` |
-| --- | --- | --- |
-| Básico (Lab 01 a Lab 09) | `1-Basico/package.json` | `Lab 0*/*` (activo) |
-| Intermedio (Lab 11 a Lab 19) | `2-Intermedio/package.json` | `Lab 1[1-9]/*` (se creará al empezar el nivel) |
-| Avanzado (Lab 21 a Lab 28) | `3-Avanzado/package.json` | `Lab 2[1-8]/*` (se creará al empezar el nivel) |
+| Nivel | Dependencias |
+| --- | --- |
+| Básico (`1-Basico`) | Workspace propio: `1-Basico/package.json` con `workspaces: ["Lab 0*/*"]`, su lockfile y su `node_modules`, compartidos por Lab 01 a Lab 09. Lab 10 y Lab 10.1 quedan fuera del patrón y son autónomos. |
+| Intermedio (`2-Intermedio`) | **Sin workspace todavía**: solo contiene las carpetas de los labs con sus enunciados. Se decidirá al desarrollar el nivel. |
+| Avanzado (`3-Avanzado`) | **Sin workspace todavía**: solo contiene las carpetas de los labs con sus enunciados. |
 
-Los patrones dejan fuera de forma natural las prácticas finales (`Lab 10`, `Lab 10.1`, `Lab 20`, `Lab 20.1`
-y `Lab 29`). Los patrones de Intermedio y Avanzado son los previstos; se comprobarán al crear su primer
-laboratorio.
+No hay `package.json` en la raíz del repositorio.
 
 ## Requisitos
 
@@ -104,18 +98,19 @@ Si el puerto 4200 está ocupado, se puede elegir otro: `npx ng serve --port 4201
 
 ## Cómo crear un laboratorio nuevo
 
-### Laboratorio compartido
+### Laboratorio en un nivel con workspace (por ejemplo, el nivel Básico)
 
 ```bash
-cd "2-Intermedio/Lab 11"
+cd "1-Basico/Lab 05"
 npx -p @angular/cli@20 ng new miApp --routing --style=scss --ssr=false --zoneless=false \
     --skip-git --skip-install --ai-config=none --package-manager=npm
 # desde la carpeta del nivel:
 cd .. && npm install
 ```
 
-Antes del primer laboratorio de un nivel hay que crear su `package.json` con el patrón de `workspaces`
-correspondiente (véase la tabla anterior). Se puede partir del de `1-Basico/package.json`.
+Si el nivel aún no tiene workspace (Intermedio y Avanzado), hay que decidir antes si lo tendrá: en ese caso se
+crea un `package.json` en la carpeta del nivel con el campo `workspaces` (se puede partir del de
+`1-Basico/package.json`) y el patrón de sus labs normales, de forma que las prácticas finales queden fuera.
 
 ### Práctica final autónoma
 
