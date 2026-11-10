@@ -1,0 +1,29 @@
+<header class="app-header">
+  <div class="header-content">
+    <div class="logo">
+      <h1>{{ appTitle }}</h1>
+    </div>
+    <nav class="navigation">
+      <ul>
+        <li><a (click)="navigate('home')">Inicio</a></li>
+        <li><a (click)="navigate('counter')">Counter</a></li>
+        <li><a (click)="navigate('users')">Users</a></li>
+        <li><a (click)="navigate('directives')">Directivas</a></li>
+        <li><a (click)="navigate('databindings')">Data Bindings</a></li>
+        <li><a (click)="navigate('pipes')">Pipes</a></li>
+        <li><a (click)="navigate('products')">Products</a></li>
+      </ul>
+    </nav>
+    <div class="user-actions">
+      <span *ngIf="currentUser" class="user-name">
+        Hola, {{ currentUser.name }}
+      </span>
+      <button *ngIf="!currentUser" (click)="login()" class="btn-login">
+        Iniciar Sesión
+      </button>
+      <button *ngIf="currentUser" (click)="logout()" class="btn-logout">
+        Cerrar Sesión
+      </button>
+    </div>
+  </div>
+</header>
