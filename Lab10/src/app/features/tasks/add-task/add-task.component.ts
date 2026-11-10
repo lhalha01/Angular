@@ -1,10 +1,12 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, viewChild } from '@angular/core';
 import { Router } from '@angular/router';
+import { HasUnsavedChanges } from '../../../core/guards/unsaved-changes.guard';
 import { TaskDraft } from '../../../core/models/task.model';
 import { TaskService } from '../../../core/services/task.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { TaskFormComponent } from '../task-form/task-form.component';
 
+/** Ruta `/add-task`. Protegida por `unsavedChangesGuard`. */
 @Component({
   selector: 'app-add-task',
   imports: [TaskFormComponent],
@@ -17,10 +19,15 @@ import { TaskFormComponent } from '../task-form/task-form.component';
     </section>
   `,
 })
-export class AddTaskComponent {
+export class AddTaskComponent implements HasUnsavedChanges {
   private readonly tasks = inject(TaskService);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
+  private readonly form = viewChild.required(TaskFormComponent);
+
+  hasUnsavedChanges(): boolean {
+    return this.form().hasUnsavedChanges();
+  }
 
   protected create(draft: TaskDraft): void {
     this.tasks.addTask(draft).subscribe((task) => {

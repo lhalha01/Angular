@@ -136,4 +136,77 @@ describe('TaskFormComponent', () => {
     fixture.detectChanges();
     expect(el.querySelector('button[type="submit"]')?.textContent).toContain('Guardar cambios');
   });
+
+  describe('unsaved changes', () => {
+    it('has none at the start', async () => {
+      const { fixture } = await setup();
+      expect(fixture.componentInstance.hasUnsavedChanges()).toBeFalse();
+    });
+
+    it('has none at the start when editing an existing task', async () => {
+      const { fixture } = await setup({ value: { title: 'Original', userId: 2, completed: true } });
+      expect(fixture.componentInstance.hasUnsavedChanges()).toBeFalse();
+    });
+
+    it('detects a change in the title, the user or the status', async () => {
+      const first = await setup();
+      await first.typeTitle('Algo');
+      expect(first.fixture.componentInstance.hasUnsavedChanges()).toBeTrue();
+      TestBed.resetTestingModule();
+
+      const second = await setup();
+      second.completed.click();
+      second.fixture.detectChanges();
+      await second.fixture.whenStable();
+      expect(second.fixture.componentInstance.hasUnsavedChanges()).toBeTrue();
+      TestBed.resetTestingModule();
+
+      const third = await setup();
+      third.user.selectedIndex = 1;
+      third.user.dispatchEvent(new Event('change'));
+      third.fixture.detectChanges();
+      await third.fixture.whenStable();
+      expect(third.fixture.componentInstance.hasUnsavedChanges()).toBeTrue();
+    });
+
+    it('does not count a change that was undone', async () => {
+      const { fixture, typeTitle } = await setup({ value: { title: 'Original', userId: 1, completed: false } });
+      await typeTitle('Otro');
+      expect(fixture.componentInstance.hasUnsavedChanges()).toBeTrue();
+      await typeTitle('Original');
+      expect(fixture.componentInstance.hasUnsavedChanges()).toBeFalse();
+    });
+
+    it('has none after saving, so leaving afterwards does not ask', async () => {
+      const { fixture, typeTitle, submit } = await setup();
+      await typeTitle('Comprar pan');
+      expect(fixture.componentInstance.hasUnsavedChanges()).toBeTrue();
+      submit.click();
+      expect(fixture.componentInstance.hasUnsavedChanges()).toBeFalse();
+    });
+
+    it('does not count as saved when the form was invalid and nothing was emitted', async () => {
+      const { fixture, el, typeTitle } = await setup();
+      await typeTitle('ab'); // inválido: menos de 3 caracteres
+      el.querySelector('form')!.dispatchEvent(new Event('submit'));
+      expect(fixture.componentInstance.hasUnsavedChanges()).toBeTrue();
+    });
+
+    it('asks the browser to confirm closing the tab only when there are changes', async () => {
+      // Se llama al manejador directamente: disparar un `beforeunload` real en window haría
+      // que Karma crea que un test ha recargado la página.
+      const { fixture, typeTitle } = await setup();
+      const handler = fixture.componentInstance as unknown as { onBeforeUnload(event: BeforeUnloadEvent): void };
+      const fakeEvent = () => ({ preventDefault: jasmine.createSpy('preventDefault') }) as unknown as BeforeUnloadEvent;
+
+      const quiet = fakeEvent();
+      handler.onBeforeUnload(quiet);
+      expect(quiet.preventDefault).not.toHaveBeenCalled();
+
+      await typeTitle('Algo');
+      const warned = fakeEvent();
+      handler.onBeforeUnload(warned);
+      expect(warned.preventDefault).toHaveBeenCalled();
+    });
+  });
 });

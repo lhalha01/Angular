@@ -33,6 +33,9 @@ Otros comandos: `npm run build` (producción) y `npm test` (Karma + Jasmine; en 
 | `/add-task` | `AddTaskComponent` |
 
 Todas se cargan con `loadComponent` (lazy) y el `:id` llega como `input()` (`withComponentInputBinding`).
+`/add-task` y `/tasks/:id/edit` llevan un guard `canDeactivate` (`unsavedChangesGuard`): si hay cambios sin guardar,
+antes de salir (enlace, Cancelar o botón atrás) se pide confirmación; cerrar o recargar la pestaña usa el aviso
+nativo del navegador.
 
 ## Funcionalidades de la lista (`/tasks`)
 

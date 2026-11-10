@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { unsavedChangesGuard } from './core/guards/unsaved-changes.guard';
 import { taskResolver } from './features/tasks/task.resolver';
 
 /** Componentes cargados de forma diferida (un chunk por pantalla). */
@@ -34,6 +35,7 @@ export const routes: Routes = [
           {
             path: 'edit',
             title: 'Editar tarea',
+            canDeactivate: [unsavedChangesGuard],
             loadComponent: () =>
               import('./features/tasks/task-edit/task-edit.component').then((m) => m.TaskEditComponent),
           },
@@ -44,6 +46,7 @@ export const routes: Routes = [
   {
     path: 'add-task',
     title: 'Nueva tarea',
+    canDeactivate: [unsavedChangesGuard],
     loadComponent: () => import('./features/tasks/add-task/add-task.component').then((m) => m.AddTaskComponent),
   },
   { path: '**', redirectTo: '' },

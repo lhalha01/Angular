@@ -5,6 +5,7 @@ import { provideRouter, Router, withComponentInputBinding } from '@angular/route
 import { RouterTestingHarness } from '@angular/router/testing';
 import { routes } from './app.routes';
 import { Task } from './core/models/task.model';
+import { ConfirmService } from './core/services/confirm.service';
 import { TaskService } from './core/services/task.service';
 
 const TODOS = 'https://jsonplaceholder.typicode.com/todos';
@@ -86,5 +87,88 @@ describe('task routes', () => {
     await harness.navigateByUrl('/no-existe');
     await settle();
     expect(router.url).toBe('/');
+  });
+
+  describe('unsaved changes guard', () => {
+    const type = (root: HTMLElement, value: string) => {
+      const title = root.querySelector<HTMLInputElement>('#title')!;
+      title.value = value;
+      title.dispatchEvent(new Event('input'));
+    };
+
+    it('lets the user leave the creation form without asking when nothing was typed', async () => {
+      const { harness, router, settle } = await setup();
+      const ask = spyOn(TestBed.inject(ConfirmService), 'ask');
+      await harness.navigateByUrl('/add-task');
+      await settle();
+
+      await router.navigateByUrl('/');
+      expect(ask).not.toHaveBeenCalled();
+      expect(router.url).toBe('/');
+    });
+
+    it('asks before leaving a form with changes, and stays if the user keeps editing', async () => {
+      const { harness, router, settle } = await setup();
+      const ask = spyOn(TestBed.inject(ConfirmService), 'ask').and.resolveTo(false);
+      await harness.navigateByUrl('/add-task');
+      await settle();
+      type(harness.routeNativeElement!, 'Comprar pan');
+      await settle();
+
+      await router.navigateByUrl('/tasks');
+      expect(ask).toHaveBeenCalledTimes(1);
+      expect(router.url).toBe('/add-task');
+      expect(harness.routeNativeElement!.querySelector<HTMLInputElement>('#title')!.value).toBe('Comprar pan');
+    });
+
+    it('leaves the form when the user accepts to discard the changes', async () => {
+      const { harness, router, settle } = await setup();
+      spyOn(TestBed.inject(ConfirmService), 'ask').and.resolveTo(true);
+      await harness.navigateByUrl('/add-task');
+      await settle();
+      type(harness.routeNativeElement!, 'Comprar pan');
+      await settle();
+
+      await router.navigateByUrl('/tasks');
+      expect(router.url).toBe('/tasks');
+    });
+
+    it('also protects the edit form', async () => {
+      const { harness, router, settle } = await setup();
+      const ask = spyOn(TestBed.inject(ConfirmService), 'ask').and.resolveTo(false);
+      await harness.navigateByUrl('/tasks/2/edit');
+      await settle();
+      type(harness.routeNativeElement!, 'Título distinto');
+      await settle();
+
+      await router.navigateByUrl('/tasks/2');
+      expect(ask).toHaveBeenCalledTimes(1);
+      expect(router.url).toBe('/tasks/2/edit');
+    });
+
+    it('does not ask after saving (the save itself navigates away)', async () => {
+      const { harness, http, router, settle } = await setup();
+      const ask = spyOn(TestBed.inject(ConfirmService), 'ask');
+      await harness.navigateByUrl('/tasks/2/edit');
+      await settle();
+      type(harness.routeNativeElement!, 'Título guardado');
+      await settle();
+
+      harness.routeNativeElement!.querySelector<HTMLButtonElement>('button[type="submit"]')!.click();
+      http.expectOne({ method: 'PUT', url: `${TODOS}/2` }).flush({});
+      await settle();
+
+      expect(ask).not.toHaveBeenCalled();
+      expect(router.url).toBe('/tasks/2');
+    });
+
+    it('does not guard the detail page', async () => {
+      const { harness, router, settle } = await setup();
+      const ask = spyOn(TestBed.inject(ConfirmService), 'ask');
+      await harness.navigateByUrl('/tasks/2');
+      await settle();
+      await router.navigateByUrl('/');
+      expect(ask).not.toHaveBeenCalled();
+    });
   });
 });

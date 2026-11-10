@@ -1,12 +1,13 @@
-import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, viewChild } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { HasUnsavedChanges } from '../../../core/guards/unsaved-changes.guard';
 import { Task, TaskDraft } from '../../../core/models/task.model';
 import { TaskService } from '../../../core/services/task.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { StateMessageComponent } from '../../../shared/state-message/state-message.component';
 import { TaskFormComponent } from '../task-form/task-form.component';
 
-/** Ruta hija `/tasks/:id/edit`. La tarea la carga `taskResolver`. */
+/** Ruta hija `/tasks/:id/edit`. La tarea la carga `taskResolver`; protegida por `unsavedChangesGuard`. */
 @Component({
   selector: 'app-task-edit',
   imports: [TaskFormComponent, RouterLink, StateMessageComponent],
@@ -29,13 +30,19 @@ import { TaskFormComponent } from '../task-form/task-form.component';
     }
   `,
 })
-export class TaskEditComponent {
+export class TaskEditComponent implements HasUnsavedChanges {
   private readonly tasks = inject(TaskService);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
+  /** No existe si la tarea no se ha encontrado (se muestra el mensaje en su lugar). */
+  private readonly form = viewChild(TaskFormComponent);
 
   /** Llega resuelta por la ruta (`null` si el id no existe). */
   readonly task = input.required<Task | null>();
+
+  hasUnsavedChanges(): boolean {
+    return this.form()?.hasUnsavedChanges() ?? false;
+  }
 
   protected save(task: Task, draft: TaskDraft): void {
     this.tasks.updateTask({ ...task, ...draft }).subscribe(() => {

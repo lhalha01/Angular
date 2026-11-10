@@ -7,6 +7,7 @@ import { UserService } from '../../../core/services/user.service';
 @Component({
   selector: 'app-task-form',
   imports: [FormsModule],
+  host: { '(window:beforeunload)': 'onBeforeUnload($event)' },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <form #f="ngForm" (ngSubmit)="submit(f)" novalidate>
@@ -65,6 +66,7 @@ export class TaskFormComponent {
   /** Valores iniciales. Se copian: editar el formulario no toca el estado hasta guardar. */
   @Input() set value(draft: TaskDraft) {
     this.model = { ...draft };
+    this.initial = { ...draft };
   }
   readonly submitLabel = input('Guardar');
   readonly saved = output<TaskDraft>();
@@ -72,9 +74,31 @@ export class TaskFormComponent {
 
   protected readonly notBlank = /\S/;
   protected model: TaskDraft = { title: '', userId: 1, completed: false };
+  /** Copia de los valores de partida, para saber si el usuario ha cambiado algo. */
+  private initial: TaskDraft = { ...this.model };
+  private wasSubmitted = false;
+
+  /**
+   * ¿Hay cambios sin guardar? Compara con los valores de partida (si el usuario escribe y
+   * borra, no cuenta) y es `false` tras guardar, para que salir después no pregunte.
+   */
+  hasUnsavedChanges(): boolean {
+    if (this.wasSubmitted) return false;
+    return (
+      this.model.title !== this.initial.title ||
+      this.model.userId !== this.initial.userId ||
+      this.model.completed !== this.initial.completed
+    );
+  }
+
+  /** Cerrar o recargar la pestaña no pasa por el router: lo cubre el aviso nativo del navegador. */
+  protected onBeforeUnload(event: BeforeUnloadEvent): void {
+    if (this.hasUnsavedChanges()) event.preventDefault();
+  }
 
   protected submit(form: NgForm): void {
     if (form.invalid) return;
+    this.wasSubmitted = true;
     this.saved.emit({ ...this.model, title: this.model.title.trim() });
   }
 }
