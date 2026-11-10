@@ -34,6 +34,17 @@ Otros comandos: `npm run build` (producción) y `npm test` (Karma + Jasmine; en 
 
 Todas se cargan con `loadComponent` (lazy) y el `:id` llega como `input()` (`withComponentInputBinding`).
 
+## Funcionalidades de la lista (`/tasks`)
+
+- **Búsqueda** por título (sin distinguir mayúsculas ni tildes) y filtros por **estado** y **usuario**.
+- **Ordenación**: recientes, antiguas, título A–Z / Z–A, pendientes o completadas primero.
+- **Paginación** con selector "Por página": 10, 25, 50, 100 o Todos.
+- **Vista** en marcos (tarjetas) o en lista; se recuerda la elección.
+- **Filtros en la URL** (`/tasks?estado=pending&usuario=3&orden=title-asc`): se conservan al recargar o compartir el enlace.
+- **Cambio de estado** pulsando la etiqueta, con confirmación; **borrado** con confirmación y opción de **Deshacer**.
+- **Avisos** al crear, editar, cambiar estado, borrar y restaurar.
+- **Tema claro/oscuro** desde la barra superior (se recuerda; por defecto, el del sistema).
+- Contador de resultados, "Limpiar filtros" y estados vacíos con acción.
 ## Estructura
 
 ```text
@@ -49,6 +60,7 @@ src/app
   usuarios en JSONPlaceholder, con estado en memoria. Se usa para cruzar tarea → nombre de usuario.
 - **Directiva** `appHighlightUser`: resalta nombres que empiezan por vocal (admite tildes).
 - **Pipe** `taskStatus`: `Completada ✅` / `Pendiente ⏳`; además se usan `uppercase` y `date` (locale `es`).
+- **ConfirmService / ToastService**: diálogo modal (`<dialog>`) y avisos propios, en lugar de `window.confirm`.
 - **Formulario**: template-driven con `[(ngModel)]` y validaciones (título obligatorio, 3–120 caracteres y
   no en blanco; usuario obligatorio elegido de la lista).
 

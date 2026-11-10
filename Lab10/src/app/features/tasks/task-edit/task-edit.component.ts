@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { switchMap } from 'rxjs';
 import { Task, TaskDraft } from '../../../core/models/task.model';
 import { TaskService } from '../../../core/services/task.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { TaskFormComponent } from '../task-form/task-form.component';
 
 /** Ruta hija `/tasks/:id/edit`. */
@@ -36,6 +37,7 @@ import { TaskFormComponent } from '../task-form/task-form.component';
 export class TaskEditComponent {
   private readonly tasks = inject(TaskService);
   private readonly router = inject(Router);
+  private readonly toast = inject(ToastService);
 
   /** Llega del parámetro `:id` gracias a withComponentInputBinding(). */
   readonly id = input.required<string>();
@@ -46,7 +48,10 @@ export class TaskEditComponent {
   );
 
   protected save(task: Task, draft: TaskDraft): void {
-    this.tasks.updateTask({ ...task, ...draft }).subscribe(() => this.router.navigate(['/tasks', task.id]));
+    this.tasks.updateTask({ ...task, ...draft }).subscribe(() => {
+      this.toast.show(`Tarea #${task.id} actualizada`);
+      this.router.navigate(['/tasks', task.id]);
+    });
   }
 
   protected cancel(task: Task): void {

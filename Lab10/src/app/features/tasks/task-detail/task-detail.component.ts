@@ -42,8 +42,8 @@ import { TaskStatusPipe } from '../../../shared/pipes/task-status.pipe';
   styles: `
     .detail { max-width: 760px; margin: 3rem auto; }
     h2 { font-size: 2rem; margin: 0.4rem 0 1.5rem; }
-    .row { display: flex; justify-content: space-between; gap: 1rem; padding: 0.9rem 0; border-bottom: 1px solid rgba(148, 163, 184, 0.14); color: #cbd5e1; }
-    .label { color: #94a3b8; }
+    .row { display: flex; justify-content: space-between; gap: 1rem; padding: 0.9rem 0; border-bottom: 1px solid var(--border-soft); color: var(--text-muted); }
+    .label { color: var(--text-dim); }
   `,
 })
 export class TaskDetailComponent {

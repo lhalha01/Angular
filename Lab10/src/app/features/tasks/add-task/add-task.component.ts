@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { TaskDraft } from '../../../core/models/task.model';
 import { TaskService } from '../../../core/services/task.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { TaskFormComponent } from '../task-form/task-form.component';
 
 @Component({
@@ -19,9 +20,13 @@ import { TaskFormComponent } from '../task-form/task-form.component';
 export class AddTaskComponent {
   private readonly tasks = inject(TaskService);
   private readonly router = inject(Router);
+  private readonly toast = inject(ToastService);
 
   protected create(draft: TaskDraft): void {
-    this.tasks.addTask(draft).subscribe(() => this.back());
+    this.tasks.addTask(draft).subscribe((task) => {
+      this.toast.show(`Tarea #${task.id} creada`);
+      this.back();
+    });
   }
 
   protected back(): void {

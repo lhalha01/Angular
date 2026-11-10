@@ -76,6 +76,20 @@ export class TaskService {
     );
   }
 
+  /**
+   * Reinserta una tarea borrada en su posición original (para "Deshacer").
+   * Si su id ya está en uso (p. ej. se creó otra tarea reutilizándolo) no hace nada.
+   */
+  restoreTask(task: Task, index: number): boolean {
+    if (this._tasks().some((t) => t.id === task.id)) return false;
+    this._tasks.update((list) => {
+      const copy = [...list];
+      copy.splice(Math.min(index, copy.length), 0, task);
+      return copy;
+    });
+    return true;
+  }
+
   private nextId(): number {
     return this._tasks().reduce((max, t) => Math.max(max, t.id), 0) + 1;
   }

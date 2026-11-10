@@ -23,8 +23,8 @@ import { RouterLink } from '@angular/router';
   styles: `
     .hero { min-height: 70vh; display: grid; place-items: center; padding: 2rem; }
     .hero__content { max-width: 720px; text-align: center; padding: 3rem 2rem; }
-    h1 { font-size: clamp(2.2rem, 4vw, 3.6rem); margin: 0.8rem 0 1rem; color: #f8fafc; }
-    .lead { color: #cbd5e1; font-size: 1.05rem; }
+    h1 { font-size: clamp(2.2rem, 4vw, 3.6rem); margin: 0.8rem 0 1rem; color: var(--text-strong); }
+    .lead { color: var(--text-muted); font-size: 1.05rem; }
     .actions { justify-content: center; margin-top: 2rem; }
   `,
 })
