@@ -84,7 +84,10 @@ src/app
 - **API simulada**: las escrituras (POST/PUT/DELETE) se envían, pero `ignoreServerOutcome` hace explícito, en un único
   sitio, que ni su respuesta ni su error cambian el resultado. Con una API real habría que quitarlo para que los
   errores llegaran al usuario. Los errores de la carga inicial sí se muestran (con "Reintentar").
-- **Pruebas**: `npm test` ejecuta ≈155 tests (cobertura ≈98 % de líneas), incluida una prueba de integración
+- **Ciclo de vida**: `TaskFormComponent.ngOnChanges` reinicia el formulario con una copia cada vez que el padre pasa
+  un valor inicial; `TaskListComponent.ngOnInit` lee los filtros de la URL; `ToastService.ngOnDestroy` cancela los
+  temporizadores pendientes. El resto del estado reactivo usa signals y `effect()`, que se limpian solos.
+- **Pruebas**: `npm test` ejecuta ≈180 tests (cobertura ≈98 % de líneas), incluida una prueba de integración
   de las rutas reales.
 
 - **TaskService**: `HttpClient` + estado en `signal`. El POST/PUT/DELETE se envía a la API, pero el

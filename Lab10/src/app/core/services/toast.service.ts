@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, OnDestroy, signal } from '@angular/core';
 
 export interface Toast {
   id: number;
@@ -17,7 +17,7 @@ export interface ToastOptions {
 
 /** Avisos breves ("toasts") para confirmar acciones del usuario. */
 @Injectable({ providedIn: 'root' })
-export class ToastService {
+export class ToastService implements OnDestroy {
   private readonly _toasts = signal<Toast[]>([]);
   readonly toasts = this._toasts.asReadonly();
 
@@ -34,6 +34,16 @@ export class ToastService {
   runAction(toast: Toast): void {
     toast.action?.();
     this.dismiss(toast.id);
+  }
+
+  /**
+   * Limpieza obligatoria: al destruirse el servicio (cierre de la app o, en tests, del
+   * módulo de pruebas) se cancelan los temporizadores pendientes, para que ninguno
+   * dispare un `dismiss` sobre un servicio que ya no existe.
+   */
+  ngOnDestroy(): void {
+    this.timers.forEach((timer) => clearTimeout(timer));
+    this.timers.clear();
   }
 
   dismiss(id: number): void {

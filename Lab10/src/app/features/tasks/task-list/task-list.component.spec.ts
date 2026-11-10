@@ -258,7 +258,7 @@ describe('TaskListComponent', () => {
   });
 
   describe('filters in the URL', () => {
-    async function setupWithRoute(url: string) {
+    async function setupWithRoute(url: string, tasks: Task[] = SMALL) {
       TestBed.configureTestingModule({
         providers: [
           provideRouter([{ path: 'tasks', component: TaskListComponent }]),
@@ -269,10 +269,15 @@ describe('TaskListComponent', () => {
       const http = TestBed.inject(HttpTestingController);
       const harness = await RouterTestingHarness.create();
       await harness.navigateByUrl(url, TaskListComponent);
-      http.expectOne(TODOS).flush(SMALL);
+      http.expectOne(TODOS).flush(tasks);
       http.expectOne(USERS).flush(USER_LIST);
       harness.detectChanges();
-      return { harness, router: TestBed.inject(Router), ...helpers(harness.fixture as never, http) };
+      const settle = async () => {
+        harness.detectChanges();
+        await harness.fixture.whenStable();
+        harness.detectChanges();
+      };
+      return { harness, router: TestBed.inject(Router), settle, ...helpers(harness.fixture as never, http) };
     }
 
     it('applies the filters found in the URL', async () => {
@@ -298,6 +303,39 @@ describe('TaskListComponent', () => {
       await harness.fixture.whenStable();
       expect(router.url).toContain('q=pan');
       expect(router.url).toContain('estado=completed');
+    });
+
+    describe('reading the URL in ngOnInit', () => {
+      const many: Task[] = Array.from({ length: 30 }, (_, i) => ({
+        id: i + 1,
+        userId: 1,
+        title: `tarea ${i + 1}`,
+        completed: false,
+        createdAt: new Date(2024, 0, 1, 0, 30 - i).toISOString(),
+      }));
+
+      it('opens the page and the page size given in the URL', async () => {
+        const { ids } = await setupWithRoute('/tasks?pag=2&tam=10', many);
+        expect(ids()[0]).toBe('#11');
+        expect(ids().length).toBe(10);
+      });
+
+      it('keeps the filters in the URL after starting (they are not overwritten by the defaults)', async () => {
+        const { harness, router, settle } = await setupWithRoute('/tasks?estado=pending&usuario=1&pag=2&tam=10', many);
+        harness.detectChanges();
+        await settle();
+        expect(router.url).toContain('estado=pending');
+        expect(router.url).toContain('usuario=1');
+        expect(router.url).toContain('pag=2');
+      });
+
+      it('goes back to page 1 when a filter changes after the initial page was restored', async () => {
+        const { ids, type, harness } = await setupWithRoute('/tasks?pag=3&tam=10', many);
+        expect(ids()[0]).toBe('#21');
+        type('tarea 1');
+        harness.detectChanges();
+        expect(ids()[0]).toBe('#1');
+      });
     });
   });
 });

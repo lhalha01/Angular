@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, linkedSignal, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, linkedSignal, OnInit, signal, untracked } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Task, TaskFilter } from '../../../core/models/task.model';
 import { StorageService } from '../../../core/services/storage.service';
@@ -10,7 +10,7 @@ import { StateMessageComponent } from '../../../shared/state-message/state-messa
 import { TaskActions } from '../task-actions.service';
 import { TaskCardComponent } from '../task-card/task-card.component';
 import { TaskToolbarComponent } from '../task-toolbar/task-toolbar.component';
-import { readParams, toParams } from './task-list-params';
+import { DEFAULT_LIST_STATE, readParams, toParams } from './task-list-params';
 import { filterAndSort, hasActiveFilters, SortKey, TaskQuery, ViewMode } from './task-query';
 
 const VIEW_KEY = 'taskView';
@@ -102,7 +102,7 @@ const VIEWS: readonly ViewMode[] = ['cards', 'list'];
     .task-list--rows { grid-template-columns: 1fr; gap: 0.6rem; }
   `,
 })
-export class TaskListComponent {
+export class TaskListComponent implements OnInit {
   private readonly taskService = inject(TaskService);
   private readonly userService = inject(UserService);
   private readonly router = inject(Router);
@@ -114,15 +114,13 @@ export class TaskListComponent {
   protected readonly allTasks = this.taskService.tasks;
   protected readonly users = this.userService.users;
 
-  /** La URL manda al entrar: se lee una vez y después solo se escribe. */
-  private readonly initial = readParams(this.route.snapshot.queryParamMap);
-
   // Estado de la consulta (cada señal se enlaza con la barra de filtros mediante [(…)]).
-  protected readonly search = signal(this.initial.search);
-  protected readonly status = signal<TaskFilter>(this.initial.status);
-  protected readonly user = signal<number | 'all'>(this.initial.user);
-  protected readonly sort = signal<SortKey>(this.initial.sort);
-  protected readonly pageSize = signal<PageSize>(this.initial.pageSize);
+  // Parte de los valores por defecto; `ngOnInit` los sustituye por los de la URL.
+  protected readonly search = signal(DEFAULT_LIST_STATE.search);
+  protected readonly status = signal<TaskFilter>(DEFAULT_LIST_STATE.status);
+  protected readonly user = signal<number | 'all'>(DEFAULT_LIST_STATE.user);
+  protected readonly sort = signal<SortKey>(DEFAULT_LIST_STATE.sort);
+  protected readonly pageSize = signal<PageSize>(DEFAULT_LIST_STATE.pageSize);
   protected readonly view = signal<ViewMode>(this.storage.getOneOf(VIEW_KEY, VIEWS) ?? 'cards');
 
   private readonly query = computed<TaskQuery>(() => ({
@@ -132,10 +130,10 @@ export class TaskListComponent {
     sort: this.sort(),
   }));
 
-  /** Vuelve a la página 1 cuando cambia la consulta o el tamaño; al entrar respeta la URL. */
+  /** Vuelve a la página 1 cada vez que cambia la consulta o el tamaño de página. */
   protected readonly page = linkedSignal<{ query: TaskQuery; size: PageSize }, number>({
     source: () => ({ query: this.query(), size: this.pageSize() }),
-    computation: (_source, previous) => (previous ? 1 : this.initial.page),
+    computation: () => 1,
   });
 
   protected readonly filtered = computed(() => filterAndSort(this.allTasks(), this.query()));
@@ -158,6 +156,21 @@ export class TaskListComponent {
 
     // Se recuerda la vista elegida entre sesiones.
     effect(() => this.storage.set(VIEW_KEY, this.view()));
+  }
+
+  /**
+   * La URL manda al entrar: se lee una vez aquí y después solo se escribe. Va en `ngOnInit`
+   * (y no en el constructor) porque necesita la ruta ya activada. La página se fija la
+   * última, porque cambiar cualquier filtro la devuelve a 1.
+   */
+  ngOnInit(): void {
+    const initial = readParams(this.route.snapshot.queryParamMap);
+    this.search.set(initial.search);
+    this.status.set(initial.status);
+    this.user.set(initial.user);
+    this.sort.set(initial.sort);
+    this.pageSize.set(initial.pageSize);
+    this.page.set(initial.page);
   }
 
   protected userName(userId: number): string {

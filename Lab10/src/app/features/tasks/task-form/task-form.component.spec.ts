@@ -209,4 +209,37 @@ describe('TaskFormComponent', () => {
       expect(warned.preventDefault).toHaveBeenCalled();
     });
   });
+
+  describe('ngOnChanges (initial value)', () => {
+    it('restarts the form with a copy each time the parent passes a new value', async () => {
+      const { fixture, el, title, typeTitle } = await setup({ value: { title: 'Primera', userId: 1, completed: false } });
+      expect(title.value).toBe('Primera');
+
+      await typeTitle('Editada a mano');
+      expect(fixture.componentInstance.hasUnsavedChanges()).toBeTrue();
+
+      fixture.componentRef.setInput('value', { title: 'Segunda', userId: 2, completed: true });
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(el.querySelector<HTMLInputElement>('#title')!.value).toBe('Segunda');
+      expect(el.querySelector<HTMLInputElement>('#completed')!.checked).toBeTrue();
+      expect(fixture.componentInstance.hasUnsavedChanges()).toBeFalse(); // empieza de cero
+    });
+
+    it('keeps its defaults when no initial value is ever passed', async () => {
+      const { title, completed, fixture } = await setup();
+      expect(title.value).toBe('');
+      expect(completed.checked).toBeFalse();
+      expect(fixture.componentInstance.hasUnsavedChanges()).toBeFalse();
+    });
+
+    it('works on a copy: the object from the parent is never modified', async () => {
+      const parentValue = { title: 'Del padre', userId: 1, completed: false };
+      const { typeTitle } = await setup({ value: parentValue });
+      await typeTitle('Cambiado en el formulario');
+      expect(parentValue.title).toBe('Del padre');
+    });
+  });
 });

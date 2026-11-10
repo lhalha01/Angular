@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, Input, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, Input, input, OnChanges, output, SimpleChanges } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
 import { TaskDraft } from '../../../core/models/task.model';
 import { UserService } from '../../../core/services/user.service';
@@ -60,14 +60,11 @@ import { UserService } from '../../../core/services/user.service';
     </form>
   `,
 })
-export class TaskFormComponent {
+export class TaskFormComponent implements OnChanges {
   protected readonly users = inject(UserService);
 
-  /** Valores iniciales. Se copian: editar el formulario no toca el estado hasta guardar. */
-  @Input() set value(draft: TaskDraft) {
-    this.model = { ...draft };
-    this.initial = { ...draft };
-  }
+  /** Valores iniciales. Se copian (ver `ngOnChanges`): editar el formulario no toca el estado hasta guardar. */
+  @Input() value?: TaskDraft;
   readonly submitLabel = input('Guardar');
   readonly saved = output<TaskDraft>();
   readonly cancelled = output<void>();
@@ -77,6 +74,16 @@ export class TaskFormComponent {
   /** Copia de los valores de partida, para saber si el usuario ha cambiado algo. */
   private initial: TaskDraft = { ...this.model };
   private wasSubmitted = false;
+
+  /** Cada vez que el padre pasa un valor inicial nuevo, el formulario empieza de cero con una copia. */
+  ngOnChanges(changes: SimpleChanges): void {
+    const change = changes['value'];
+    if (change?.currentValue) {
+      this.model = { ...(change.currentValue as TaskDraft) };
+      this.initial = { ...this.model };
+      this.wasSubmitted = false;
+    }
+  }
 
   /**
    * ¿Hay cambios sin guardar? Compara con los valores de partida (si el usuario escribe y
