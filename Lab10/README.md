@@ -1,4 +1,4 @@
-# Gestor de Tareas (Angular 19)
+# Gestor de Tareas (Angular 20)
 
 SPA para gestionar tareas: listar, filtrar, ver detalle, crear, editar y eliminar. Consume
 [JSONPlaceholder](https://jsonplaceholder.typicode.com) (`/todos` y `/users`); como la API no persiste
@@ -6,7 +6,7 @@ cambios, el estado se mantiene **en memoria** durante la sesión.
 
 ## Requisitos
 
-- Node.js 20+
+- Node.js **≥ 20.19 y < 22** (Angular 20 exige 20.19 o superior; el curso exige menos de 22)
 - npm
 
 ## Instalación y ejecución
@@ -27,7 +27,7 @@ Otros comandos: `npm run build` (producción) y `npm test` (Karma + Jasmine; en 
 | Ruta | Componente |
 | --- | --- |
 | `/` | `HomeComponent` |
-| `/tasks` | `TaskListComponent` (filtro por estado, borrado con `window.confirm`) |
+| `/tasks` | `TaskListComponent` (búsqueda, filtros, orden y paginación; borrado con diálogo de confirmación) |
 | `/tasks/:id` | `TaskDetailComponent` |
 | `/tasks/:id/edit` | `TaskEditComponent` (ruta hija de `:id`) |
 | `/add-task` | `AddTaskComponent` |
@@ -89,9 +89,6 @@ src/app
   temporizadores pendientes. El resto del estado reactivo usa signals y `effect()`, que se limpian solos.
 - **Pruebas**: `npm test` ejecuta ≈180 tests (cobertura ≈98 % de líneas), incluida una prueba de integración
   de las rutas reales.
-
-- **TaskService**: `HttpClient` + estado en `signal`. El POST/PUT/DELETE se envía a la API, pero el
-  resultado local manda (la API responde siempre `id: 201`, que se ignora para no duplicar ids).
 - **UserService** (servicio mock de `Servicios_mock.md`): listar, obtener por id, crear (POST) y eliminar (DELETE)
   usuarios en JSONPlaceholder, con estado en memoria. Se usa para cruzar tarea → nombre de usuario.
 - **Directiva** `appHighlightUser`: resalta nombres que empiezan por vocal (admite tildes).
@@ -100,15 +97,17 @@ src/app
 - **Formulario**: template-driven con `[(ngModel)]` y validaciones (título obligatorio, 3–120 caracteres y
   no en blanco; usuario obligatorio elegido de la lista).
 
-## Seguridad de dependencias
+## Versiones y seguridad de dependencias
 
-- Integridad: `npm audit signatures` → todos los paquetes con firma de registro verificada.
-- Versiones: última rama estable 19.x de Angular (core 19.2.25, CLI 19.2.27).
-- `npm audit` reporta vulnerabilidades (la salida completa se puede regenerar con `npm audit`):
-  - **Herramientas de desarrollo** (`@angular-devkit/build-angular`, webpack-dev-server, vite, `tar`, `piscina`…):
-    no se incluyen en el bundle de producción; afectan solo a quien ejecuta el servidor de desarrollo o la compilación.
-  - **Runtime** (`npm audit --omit=dev`: `@angular/core`, `compiler`, `router`…): avisos de XSS/sanitización que
-    afectan a i18n, hidratación SSR y bindings de host. Esta app no usa i18n ni SSR/hidratación y no enlaza HTML
-    no confiable, pero **la corrección real es migrar a Angular 21**.
-- `npm audit fix` (sin `--force`) no aporta correcciones; `--force` implica un salto mayor a Angular 21,
-  fuera del alcance de la práctica (Angular 19), por lo que se documenta en lugar de aplicarlo.
+- **Versiones**: Angular **20.3.35** (CLI 20.3.42), TypeScript 5.9, `zone.js` 0.15 y `rxjs` 7.8. Es la última versión
+  de la rama 20. `package.json` declara `engines.node` en `>=20.19.0 <22.0.0`.
+- **Integridad**: `npm audit signatures` → los 941 paquetes tienen firma de registro verificada.
+- **`npm audit --omit=dev` (lo que llega al navegador): 0 vulnerabilidades.**
+- **`npm audit` completo: 21, todas de gravedad moderada** (ninguna alta ni crítica) y todas en herramientas de
+  desarrollo: `@angular-devkit/build-angular`, `@angular/cli` y sus dependencias (`webpack-dev-server`, `sockjs`,
+  `sigstore`, `pacote`, `minimatch`, `uuid`…). No se incluyen en el bundle de producción; solo afectan a quien
+  ejecuta el servidor de desarrollo o la compilación.
+- **No se aplica `npm audit fix --force`**: propone instalar `@angular/cli@17.3.17` (**una versión anterior**) y
+  `@angular-devkit/build-angular@22`, incompatibles entre sí y con Angular 20. Se documenta en lugar de aplicarlo.
+- Historial: en Angular 19 había 43 vulnerabilidades (2 críticas, 14 altas) y 7 en runtime; la subida a la rama 20
+  las eliminó en runtime y dejó solo las 21 moderadas de herramientas.

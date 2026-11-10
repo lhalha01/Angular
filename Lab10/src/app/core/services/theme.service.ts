@@ -1,5 +1,5 @@
-import { DOCUMENT } from '@angular/common';
-import { effect, inject, Injectable, signal } from '@angular/core';
+
+import { effect, inject, Injectable, signal, DOCUMENT } from '@angular/core';
 import { StorageService } from './storage.service';
 
 export type Theme = 'light' | 'dark';
