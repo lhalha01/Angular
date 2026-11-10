@@ -11,7 +11,10 @@ cambios, el estado se mantiene **en memoria** durante la sesión.
 
 ## Instalación y ejecución
 
+Si vienes del repositorio, la app está en la carpeta `Lab10`:
+
 ```bash
+cd Lab10
 npm install
 npm start          # http://localhost:4200/
 ```
@@ -42,7 +45,8 @@ src/app
 
 - **TaskService**: `HttpClient` + estado en `signal`. El POST/PUT/DELETE se envía a la API, pero el
   resultado local manda (la API responde siempre `id: 201`, que se ignora para no duplicar ids).
-- **UserService**: carga `/users` para cruzar tarea → nombre de usuario.
+- **UserService** (servicio mock de `Servicios_mock.md`): listar, obtener por id, crear (POST) y eliminar (DELETE)
+  usuarios en JSONPlaceholder, con estado en memoria. Se usa para cruzar tarea → nombre de usuario.
 - **Directiva** `appHighlightUser`: resalta nombres que empiezan por vocal (admite tildes).
 - **Pipe** `taskStatus`: `Completada ✅` / `Pendiente ⏳`; además se usan `uppercase` y `date` (locale `es`).
 - **Formulario**: template-driven con `[(ngModel)]` y validaciones (título obligatorio, 3–120 caracteres y
