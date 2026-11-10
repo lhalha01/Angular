@@ -1,7 +1,7 @@
 import { DatePipe, UpperCasePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Task, TaskFilter } from '../../../core/models/task.model';
 import { TaskService } from '../../../core/services/task.service';
 import { UserService } from '../../../core/services/user.service';
@@ -62,7 +62,7 @@ import { TaskStatusPipe } from '../../../shared/pipes/task-status.pipe';
 
                   <div class="actions">
                     <a class="btn btn-secondary" [routerLink]="[task.id]">Ver detalle</a>
-                    <a class="btn btn-secondary" [routerLink]="[task.id, 'edit']">Editar</a>
+                    <button class="btn btn-secondary" (click)="edit(task)">Editar</button>
                     <button class="btn btn-danger" (click)="remove(task)">Eliminar</button>
                   </div>
                 </article>
@@ -91,6 +91,7 @@ import { TaskStatusPipe } from '../../../shared/pipes/task-status.pipe';
 export class TaskListComponent {
   private readonly taskService = inject(TaskService);
   private readonly userService = inject(UserService);
+  private readonly router = inject(Router);
 
   protected readonly status = this.taskService.status;
   protected readonly filter = signal<TaskFilter>('all');
@@ -109,6 +110,10 @@ export class TaskListComponent {
 
   protected userName(userId: number): string {
     return this.userService.nameOf(userId);
+  }
+
+  protected edit(task: Task): void {
+    this.router.navigate(['/tasks', task.id, 'edit']);
   }
 
   protected remove(task: Task): void {
