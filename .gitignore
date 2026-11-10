@@ -1,0 +1,6 @@
+node_modules/
+dist/
+.angular/
+audit.json
+audit.err
+.vscode/.history/
