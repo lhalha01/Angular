@@ -11,13 +11,17 @@ cambios, el estado se mantiene **en memoria** durante la sesión.
 
 ## Instalación y ejecución
 
-Si vienes del repositorio, la app está en la carpeta `Lab10`:
+En el repositorio la app está en `Lab 10/lab-10-app` y forma parte de un *workspace* de npm (`Lab */*`),
+por lo que las dependencias se instalan **una sola vez en la raíz del repositorio**:
 
 ```bash
-cd Lab10
-npm install
-npm start          # http://localhost:4200/
+npm install                      # desde la raíz del repositorio
+cd "Lab 10/lab-10-app"
+npm start                        # http://localhost:4200/
 ```
+
+Si se publica la app como repositorio independiente, basta con `npm install` y `npm start` en su carpeta:
+su `package.json` declara todas las dependencias.
 
 Otros comandos: `npm run build` (producción) y `npm test` (Karma + Jasmine; en CI:
 `npx ng test --watch=false --browsers=ChromeHeadless`).
