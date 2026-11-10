@@ -1,0 +1,217 @@
+<div class="registro-usuarios-container">
+  <h1>🔄 Ejemplos Prácticos de Observables en Angular</h1>
+  <p class="descripcion">
+    Esta página demuestra diferentes operadores y técnicas de RxJS para trabajar con Observables.
+  </p>
+
+  <div class="grid-ejemplos">
+
+    <!-- EJEMPLO 1: Búsqueda con debounceTime -->
+    <section class="ejemplo-card">
+      <div class="ejemplo-header">
+        <h2>🔍 Búsqueda con Debounce</h2>
+        <span class="badge">debounceTime, distinctUntilChanged, switchMap</span>
+      </div>
+      <div class="ejemplo-body">
+        <p class="explicacion">
+          La búsqueda espera 500ms después de que dejes de escribir antes de realizar la consulta.
+        </p>
+        <div class="input-group">
+          <input
+            type="text"
+            [(ngModel)]="busquedaUsuario"
+            (ngModelChange)="onBusquedaChange($event)"
+            placeholder="Buscar usuario..."
+            class="input-primary"
+          />
+        </div>
+        <div class="resultados" *ngIf="(resultadosBusqueda$ | async) as resultados">
+          <div *ngIf="resultados.length > 0" class="lista-resultados">
+            <div *ngFor="let usuario of resultados" class="usuario-item">
+              <img [src]="usuario.avatar" [alt]="usuario.name || 'Avatar de usuario'" class="avatar-small" />
+              <div>
+                <strong>{{ usuario.name }}</strong>
+                <div class="texto-small">{{ usuario.email }}</div>
+              </div>
+            </div>
+          </div>
+          <div *ngIf="resultados.length === 0 && busquedaUsuario" class="sin-resultados">
+            No se encontraron resultados
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- EJEMPLO 2: Validación de Email -->
+    <section class="ejemplo-card">
+      <div class="ejemplo-header">
+        <h2>📧 Validación de Email</h2>
+        <span class="badge">map, debounceTime, distinctUntilChanged</span>
+      </div>
+      <div class="ejemplo-body">
+        <p class="explicacion">
+          Valida el formato del email en tiempo real usando operadores de transformación.
+        </p>
+        <div class="input-group">
+          <input
+            type="email"
+            [(ngModel)]="email"
+            (ngModelChange)="onEmailChange($event)"
+            placeholder="correo@ejemplo.com"
+            class="input-primary"
+            [class.input-valido]="(emailValido$ | async)"
+            [class.input-invalido]="email && !(emailValido$ | async)"
+          />
+          <span class="validacion-icono" *ngIf="email">
+            {{ (emailValido$ | async) ? '✓' : '✗' }}
+          </span>
+        </div>
+        <div *ngIf="email" class="estado-validacion">
+          <span [class.texto-exito]="(emailValido$ | async)"
+                [class.texto-error]="!(emailValido$ | async)">
+            {{ (emailValido$ | async) ? 'Email válido' : 'Email inválido' }}
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- EJEMPLO 3: Contador con scan -->
+    <section class="ejemplo-card">
+      <div class="ejemplo-header">
+        <h2>🔢 Contador Acumulativo</h2>
+        <span class="badge">scan, tap</span>
+      </div>
+      <div class="ejemplo-body">
+        <p class="explicacion">
+          El operador <code>scan</code> acumula valores como reduce, pero emite en cada paso.
+        </p>
+        <div class="contador-display">
+          <div class="numero-grande">{{ contadorClicks }}</div>
+          <button (click)="incrementarContador()" class="btn btn-primary">
+            Incrementar
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- EJEMPLO 4: Estadísticas combinadas -->
+    <section class="ejemplo-card">
+      <div class="ejemplo-header">
+        <h2>📊 Combinación de Observables</h2>
+        <span class="badge">combineLatest, interval</span>
+      </div>
+      <div class="ejemplo-body">
+        <p class="explicacion">
+          Combina múltiples observables y se actualiza cuando cualquiera emite un nuevo valor.
+        </p>
+        <div *ngIf="(estadisticas$ | async) as stats" class="estadisticas-grid">
+          <div class="stat-item">
+            <span class="stat-label">Total Usuarios:</span>
+            <span class="stat-value">{{ stats.totalUsuarios }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Estado Servidor:</span>
+            <span class="stat-value estado-ok">{{ stats.estadoServidor }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Usuarios Activos:</span>
+            <span class="stat-value">{{ stats.usuariosActivos }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Última Actualización:</span>
+            <span class="stat-value">{{ stats.ultimaActualizacion | date:'HH:mm:ss' }}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- EJEMPLO 5: Operadores de transformación -->
+    <section class="ejemplo-card card-ancho-completo">
+      <div class="ejemplo-header">
+        <h2>🔄 switchMap vs mergeMap vs concatMap</h2>
+        <span class="badge">Operadores de transformación</span>
+      </div>
+      <div class="ejemplo-body">
+        <p class="explicacion">
+          <strong>switchMap:</strong> Cancela la petición anterior (ideal para búsquedas)<br>
+          <strong>mergeMap:</strong> Ejecuta todas en paralelo (todas completan)<br>
+          <strong>concatMap:</strong> Ejecuta secuencialmente (espera a que termine una antes de empezar la siguiente)
+        </p>
+        <div class="controles-operador">
+          <select [(ngModel)]="operadorActual" class="select-primary" aria-label="Seleccionar operador de transformación">
+            <option value="switchMap">switchMap</option>
+            <option value="mergeMap">mergeMap</option>
+            <option value="concatMap">concatMap</option>
+          </select>
+          <button (click)="demostrarOperadorTransformacion()" class="btn btn-secondary">
+            Ejecutar Demo
+          </button>
+        </div>
+        <div class="resultados-operador" *ngIf="resultadosOperador.length > 0">
+          <h4>Resultados:</h4>
+          <ul>
+            <li *ngFor="let resultado of resultadosOperador">{{ resultado }}</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- EJEMPLO 6: Manejo de errores -->
+    <section class="ejemplo-card">
+      <div class="ejemplo-header">
+        <h2>⚠️ Manejo de Errores</h2>
+        <span class="badge">retry, catchError</span>
+      </div>
+      <div class="ejemplo-body">
+        <p class="explicacion">
+          Simula una petición que falla y demuestra cómo reintentar y capturar errores.
+        </p>
+        <button (click)="probarManejoErrores()" class="btn btn-warning">
+          Probar Manejo de Errores
+        </button>
+        <div *ngIf="intentosReintentos > 0" class="info-reintentos">
+          <p><strong>Intentos realizados:</strong> {{ intentosReintentos }}</p>
+          <p *ngIf="errorManejado" class="texto-error">
+            <strong>Error:</strong> {{ errorManejado }}
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- EJEMPLO 7: forkJoin -->
+    <section class="ejemplo-card">
+      <div class="ejemplo-header">
+        <h2>🚀 Carga Paralela</h2>
+        <span class="badge">forkJoin</span>
+      </div>
+      <div class="ejemplo-body">
+        <p class="explicacion">
+          <code>forkJoin</code> espera a que todos los observables completen antes de emitir (similar a Promise.all).
+        </p>
+        <button (click)="cargarDatosParalelos()" class="btn btn-success">
+          Cargar Datos en Paralelo
+        </button>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Panel de Logs -->
+  <section class="logs-panel">
+    <div class="logs-header">
+      <h2>📝 Registro de Eventos (Logs)</h2>
+      <button (click)="limpiarLogs()" class="btn btn-small">Limpiar</button>
+    </div>
+    <div class="logs-body">
+      <div *ngIf="logs.length === 0" class="sin-logs">
+        No hay logs aún. Interactúa con los ejemplos arriba para ver la actividad.
+      </div>
+      <div class="log-item" *ngFor="let log of logs" [class]="'log-' + log.tipo.toLowerCase()">
+        <span class="log-time">{{ log.timestamp | date:'HH:mm:ss.SSS' }}</span>
+        <span class="log-tipo">[{{ log.tipo }}]</span>
+        <span class="log-mensaje">{{ log.mensaje }}</span>
+      </div>
+    </div>
+  </section>
+
+</div>

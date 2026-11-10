@@ -1,0 +1,55 @@
+/* Estilos globales: variables de color, contenedor, tarjetas y botones compartidos. */
+:root {
+  --primary: #0d6efd;
+  --surface: #ffffff;
+  --bg: #f4f6f9;
+  --border: #dee2e6;
+  --muted: #6c757d;
+  --text: #212529;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+a { color: var(--primary); }
+
+.container {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.card {
+  padding: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.btn {
+  display: inline-block;
+  padding: 0.55rem 1.1rem;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: filter 0.2s;
+
+  &:hover:not(:disabled) { filter: brightness(0.92); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-outline { background: transparent; border-color: var(--primary); color: var(--primary); }
+.btn-danger { background: #dc3545; color: #fff; }
