@@ -15,10 +15,10 @@ consumiendo una API mockeada con `HttpClient`.
 ## Instalación y ejecución
 
 Este proyecto es **autónomo**: tiene su propio `package.json` y `package-lock.json`, y no depende de
-ningún otro proyecto del repositorio (los Labs 01 a 09 comparten `node_modules` en la raíz; este no).
+ningún otro proyecto del repositorio (los Labs 01 a 09 comparten el `node_modules` de `1-Basico`; este no).
 
 ```bash
-cd "Lab 10.1/userManagerApp"
+cd "1-Basico/Lab 10.1/userManagerApp"
 npm install             # instala exactamente lo fijado en package-lock.json
 npm start               # http://localhost:4200/
 

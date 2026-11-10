@@ -11,12 +11,12 @@ cambios, el estado se mantiene **en memoria** durante la sesión.
 
 ## Instalación y ejecución
 
-En el repositorio la app está en `Lab 10/lab-10-app`. Es un proyecto **autónomo**: tiene su propio
+En el repositorio la app está en `1-Basico/Lab 10/lab-10-app`. Es un proyecto **autónomo**: tiene su propio
 `package.json` y `package-lock.json`, y no depende de ningún otro proyecto (los Labs 01 a 09 comparten
-`node_modules` en la raíz; este no).
+el `node_modules` de `1-Basico`; este no).
 
 ```bash
-cd "Lab 10/lab-10-app"
+cd "1-Basico/Lab 10/lab-10-app"
 npm install                      # instala exactamente lo fijado en package-lock.json
 npm start                        # http://localhost:4200/
 ```
