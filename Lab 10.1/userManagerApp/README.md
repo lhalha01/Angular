@@ -14,26 +14,22 @@ consumiendo una API mockeada con `HttpClient`.
 
 ## Instalación y ejecución
 
-Este proyecto vive dentro de un *workspace* de npm (`Lab */*`), así que las dependencias se instalan
-**una sola vez en la raíz del repositorio**:
+Este proyecto es **autónomo**: tiene su propio `package.json` y `package-lock.json`, y no depende de
+ningún otro proyecto del repositorio (los Labs 01 a 09 comparten `node_modules` en la raíz; este no).
 
 ```bash
-# desde la raíz del repositorio
-npm install
-
-# arrancar la aplicación
 cd "Lab 10.1/userManagerApp"
-npx ng serve            # http://localhost:4200/
+npm install             # instala exactamente lo fijado en package-lock.json
+npm start               # http://localhost:4200/
 
 # tests unitarios (necesitan Chrome o Chromium)
 npx ng test --watch=false --browsers=ChromeHeadless
 
 # compilación de producción
-npx ng build
+npm run build
 ```
 
-> Si se publica este proyecto como repositorio independiente, basta con `npm install` y `npm start`
-> dentro de la carpeta del proyecto: `package.json` declara todas sus dependencias.
+Para instalar de forma reproducible y verificando los hashes del lockfile se puede usar `npm ci`.
 
 ## Rutas
 
@@ -90,18 +86,17 @@ resaltado de ids pares y confirmación de borrado.
 
 ## Integridad de paquetes y vulnerabilidades (2026-11-10)
 
-Comprobado desde la raíz del workspace:
+Comprobado en esta carpeta, con su propio `node_modules` y `package-lock.json`:
 
-- `npm audit signatures`: **949 paquetes con firma de registro verificada** y 246 con atestaciones.
-  Sin paquetes alterados.
-- `package-lock.json` consistente con los `package.json` (`npm install --package-lock-only` no introduce cambios).
-- `npm audit`: **21 vulnerabilidades, todas de gravedad moderada** (0 altas, 0 críticas). Ninguna afecta al
-  código de esta aplicación ni a sus dependencias de ejecución; son herramientas de desarrollo:
-  - **Cadena de `@angular/cli`** (`minimatch` ReDoS, `glob`, `sigstore`, `pacote`…): se usa solo al
-    compilar. `npm audit fix --force` propone **bajar a `@angular/cli@17`**, lo que es un retroceso
-    inaceptable; se resolverá al actualizar Angular.
-  - **Cadena de `@angular-devkit/build-angular`** (`webpack-dev-server` → `sockjs` → `uuid`): pertenece
-    únicamente al **Lab 10**, no a esta práctica (usa el compilador `@angular/build`, basado en esbuild).
-    El arreglo propuesto implica saltar a la v22, un cambio mayor.
-- **Versiones:** el curso fija Angular 20 (`Lab 01`: Angular 20, Node < 22), por lo que se mantiene la
-  línea 20.3 (parches al día). Existe Angular 21 estable; migrar exigiría actualizar todo el workspace.
+- **Integridad:** `npm audit signatures` → **541 paquetes con firma de registro verificada** y 124 con
+  atestaciones. Las 628 entradas del lockfile llevan hash de integridad y ninguna procede de un origen
+  distinto del registro de npm. Sin paquetes alterados ni dependencias inesperadas.
+- **`npm audit --omit=dev` (lo que llega al navegador): 0 vulnerabilidades.**
+- **`npm audit` completo: 16, todas de gravedad moderada** (0 altas, 0 críticas) y todas en la cadena de
+  `@angular/cli` (`minimatch` ReDoS, `glob`, `sigstore`, `pacote`…), una herramienta que solo se usa al
+  compilar y no se incluye en el bundle. `npm audit fix --force` propone **bajar a `@angular/cli@17`**,
+  un retroceso incompatible con Angular 20, así que no se aplica: se documenta.
+- **Versiones:** Angular 20.3 (CLI 20.3.42), TypeScript 5.9 y `rxjs` 7.8, las últimas de la línea 20 y las
+  que exige el curso (`Lab 01`: Angular 20, Node < 22). Angular 21 es estable y también admite Node 20.19,
+  por lo que sería la siguiente migración posible; Angular 22 exige Node ≥ 22.22 y no es compatible con el
+  requisito del curso.

@@ -11,17 +11,17 @@ cambios, el estado se mantiene **en memoria** durante la sesión.
 
 ## Instalación y ejecución
 
-En el repositorio la app está en `Lab 10/lab-10-app` y forma parte de un *workspace* de npm (`Lab */*`),
-por lo que las dependencias se instalan **una sola vez en la raíz del repositorio**:
+En el repositorio la app está en `Lab 10/lab-10-app`. Es un proyecto **autónomo**: tiene su propio
+`package.json` y `package-lock.json`, y no depende de ningún otro proyecto (los Labs 01 a 09 comparten
+`node_modules` en la raíz; este no).
 
 ```bash
-npm install                      # desde la raíz del repositorio
 cd "Lab 10/lab-10-app"
+npm install                      # instala exactamente lo fijado en package-lock.json
 npm start                        # http://localhost:4200/
 ```
 
-Si se publica la app como repositorio independiente, basta con `npm install` y `npm start` en su carpeta:
-su `package.json` declara todas las dependencias.
+Para instalar de forma reproducible y verificando los hashes del lockfile se puede usar `npm ci`.
 
 Otros comandos: `npm run build` (producción) y `npm test` (Karma + Jasmine; en CI:
 `npx ng test --watch=false --browsers=ChromeHeadless`).
@@ -104,8 +104,12 @@ src/app
 ## Versiones y seguridad de dependencias
 
 - **Versiones**: Angular **20.3.35** (CLI 20.3.42), TypeScript 5.9, `zone.js` 0.15 y `rxjs` 7.8. Es la última versión
-  de la rama 20. `package.json` declara `engines.node` en `>=20.19.0 <22.0.0`.
-- **Integridad**: `npm audit signatures` → los 941 paquetes tienen firma de registro verificada.
+  de la rama 20, la que fija el curso (`Lab 01`: Angular 20, Node < 22). `package.json` declara `engines.node` en
+  `>=20.19.0 <22.0.0`. Angular 21 es estable y también admite Node 20.19, por lo que sería la siguiente
+  migración posible; Angular 22 exige Node ≥ 22.22 y no es compatible con el requisito del curso.
+- **Integridad**: `npm audit signatures` → los 941 paquetes tienen firma de registro verificada (248 con
+  atestaciones). Las 1028 entradas del lockfile llevan hash de integridad y ninguna procede de un origen
+  distinto del registro de npm.
 - **`npm audit --omit=dev` (lo que llega al navegador): 0 vulnerabilidades.**
 - **`npm audit` completo: 21, todas de gravedad moderada** (ninguna alta ni crítica) y todas en herramientas de
   desarrollo: `@angular-devkit/build-angular`, `@angular/cli` y sus dependencias (`webpack-dev-server`, `sockjs`,
