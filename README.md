@@ -45,7 +45,7 @@ cual), así que se divide en dos carpetas, cada una con su propio enunciado extr
 | Laboratorio | Proyecto | Contenido | Estado |
 | --- | --- | --- | --- |
 | Lab 11.1 | `2-Intermedio/Lab 11/Lab 11.1/talenthub` | TalentHub: modelos de dominio, DTOs, mappers y type guards | Hecho |
-| Lab 11.2 | `2-Intermedio/Lab 11/Lab 11.2` | Tipado de la aplicación del Lab 10 (auditoría, modelos y type guards) | Pendiente de decidir el alcance |
+| Lab 11.2 | `2-Intermedio/Lab 11/Lab 11.2` | Tipado de la aplicación del Lab 10 (auditoría, modelos y type guards) | Pendiente de decidir el alcance: el enunciado no aplica tal cual (véase el [análisis de aplicabilidad](2-Intermedio/Lab%2011/Lab%2011.2/Analisis-aplicabilidad.md)) |
 
 ## Estructura de dependencias
 
