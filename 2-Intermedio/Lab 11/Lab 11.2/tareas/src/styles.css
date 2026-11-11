@@ -1,0 +1,104 @@
+/* ---- Tokens de tema ---- */
+/* Oscuro por defecto; ThemeService fija data-theme="light|dark" en <html>. */
+:root {
+  color-scheme: dark;
+  --page-bg: linear-gradient(135deg, #020817 0%, #111827 35%, #1e293b 100%);
+  --page-bg-solid: #020817;
+  --surface: rgba(15, 23, 42, 0.72);
+  --surface-solid: #1e293b;
+  --surface-nav: rgba(15, 23, 42, 0.7);
+  --border: rgba(148, 163, 184, 0.2);
+  --border-soft: rgba(148, 163, 184, 0.14);
+  --text: #e2e8f0;
+  --text-strong: #f8fafc;
+  --text-muted: #cbd5e1;
+  --text-dim: #94a3b8;
+  --accent-text: #a5b4fc;
+  --meta-text: #93c5fd;
+  --nav-link: #dbeafe;
+  --nav-hover: rgba(59, 130, 246, 0.15);
+  --input-bg: rgba(15, 23, 42, 0.9);
+  --input-text: #ffffff;
+  --input-border: rgba(148, 163, 184, 0.25);
+  --btn-secondary-bg: rgba(96, 165, 250, 0.15);
+  --btn-secondary-text: #dbeafe;
+  --btn-danger-bg: rgba(239, 68, 68, 0.15);
+  --btn-danger-text: #fecaca;
+  --btn-ghost-bg: rgba(148, 163, 184, 0.15);
+  --pending-bg: rgba(251, 191, 36, 0.14);
+  --pending-text: #fbbf24;
+  --done-bg: rgba(34, 197, 94, 0.16);
+  --done-text: #4ade80;
+  --error-text: #fca5a5;
+  --error-border: #f87171;
+  --highlight-bg: rgba(16, 185, 129, 0.15);
+  --highlight-border: #10b981;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --page-bg: linear-gradient(135deg, #f8fafc 0%, #eef2ff 45%, #e2e8f0 100%);
+  --page-bg-solid: #f8fafc;
+  --surface: rgba(255, 255, 255, 0.9);
+  --surface-solid: #ffffff;
+  --surface-nav: rgba(255, 255, 255, 0.85);
+  --border: rgba(100, 116, 139, 0.3);
+  --border-soft: rgba(100, 116, 139, 0.2);
+  --text: #1e293b;
+  --text-strong: #0f172a;
+  --text-muted: #334155;
+  --text-dim: #64748b;
+  --accent-text: #4f46e5;
+  --meta-text: #1d4ed8;
+  --nav-link: #1e3a8a;
+  --nav-hover: rgba(37, 99, 235, 0.12);
+  --input-bg: #ffffff;
+  --input-text: #0f172a;
+  --input-border: rgba(100, 116, 139, 0.5);
+  --btn-secondary-bg: rgba(37, 99, 235, 0.12);
+  --btn-secondary-text: #1e40af;
+  --btn-danger-bg: rgba(220, 38, 38, 0.1);
+  --btn-danger-text: #b91c1c;
+  --btn-ghost-bg: rgba(100, 116, 139, 0.15);
+  --pending-bg: rgba(217, 119, 6, 0.14);
+  --pending-text: #b45309;
+  --done-bg: rgba(22, 163, 74, 0.14);
+  --done-text: #15803d;
+  --error-text: #b91c1c;
+  --error-border: #dc2626;
+  --highlight-bg: rgba(16, 185, 129, 0.15);
+  --highlight-border: #059669;
+}
+
+* { box-sizing: border-box; }
+html { font-family: Arial, sans-serif; background: var(--page-bg-solid); color: var(--text); }
+body { margin: 0; min-height: 100vh; }
+button, input, select { font: inherit; }
+a { color: inherit; }
+
+/* ---- Estilos compartidos por todas las pantallas ---- */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 1rem; padding: 1.5rem; }
+.card--narrow { max-width: 620px; margin: 3rem auto; }
+.eyebrow { color: var(--accent-text); text-transform: uppercase; letter-spacing: 0.15em; font-size: 0.72rem; margin: 0; }
+h2 { color: var(--text-strong); margin: 0.5rem 0 1.5rem; }
+
+.field { display: flex; flex-direction: column; margin-bottom: 1rem; }
+.field label { color: var(--text-muted); margin-bottom: 0.4rem; }
+.field--inline { flex-direction: row; align-items: center; gap: 0.7rem; }
+.field--inline label { margin-bottom: 0; }
+input:not([type='checkbox']), select { background: var(--input-bg); color: var(--input-text); border: 1px solid var(--input-border); border-radius: 0.75rem; padding: 0.8rem 0.9rem; }
+input.ng-invalid.ng-touched, select.ng-invalid.ng-touched { border-color: var(--error-border); }
+.error { color: var(--error-text); font-size: 0.82rem; margin-top: 0.35rem; }
+
+.actions { display: flex; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap; }
+.btn { display: inline-flex; align-items: center; justify-content: center; border: none; border-radius: 0.75rem; padding: 0.75rem 1rem; font-weight: 600; cursor: pointer; text-decoration: none; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-primary { background: linear-gradient(135deg, #8b5cf6, #2563eb); color: white; }
+.btn-secondary { background: var(--btn-secondary-bg); color: var(--btn-secondary-text); }
+.btn-danger { background: var(--btn-danger-bg); color: var(--btn-danger-text); }
+
+.state { max-width: 620px; margin: 3rem auto; text-align: center; color: var(--text-muted); }
+.state .actions { justify-content: center; }
+
+/* Usada por HighlightUserDirective */
+.user-highlight { background: var(--highlight-bg); border-left: 4px solid var(--highlight-border); padding-left: 0.5rem; }

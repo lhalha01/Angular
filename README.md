@@ -48,7 +48,7 @@ dividen en dos carpetas, cada una con su propio enunciado extraído de él:
 | Lab 11.1 | `2-Intermedio/Lab 11/Lab 11.1/talenthub` | TalentHub: modelos de dominio, DTOs, mappers y type guards | Hecho |
 | Lab 11.2 | `2-Intermedio/Lab 11/Lab 11.2` | Tipado de la aplicación del Lab 10 (auditoría, modelos y type guards) | Pendiente de decidir el alcance: el enunciado no aplica tal cual (véase el [análisis de aplicabilidad](2-Intermedio/Lab%2011/Lab%2011.2/Analisis-aplicabilidad.md)) |
 | Lab 12.1 | `2-Intermedio/Lab 12/Lab 12.1/talenthub` | TalentHub: arquitectura por features (`core`, `shared`, `features`), barrels, alias de rutas y comprobación de arquitectura | Hecho |
-| Lab 12.2 | `2-Intermedio/Lab 12/Lab 12.2` | Reestructurar la aplicación de tareas y usuarios por features | Pendiente: continúa el Lab 11.2 |
+| Lab 12.2 | `2-Intermedio/Lab 12/Lab 12.2` | Reestructurar la aplicación de tareas y usuarios por features | No se realiza: exige modificar el Lab 10, que no se toca (véase el [análisis de aplicabilidad](2-Intermedio/Lab%2012/Lab%2012.2/Analisis-aplicabilidad.md)) |
 
 ## Estructura de dependencias
 
