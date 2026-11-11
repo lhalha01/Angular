@@ -1,0 +1,7 @@
+Lab 13.1 - TalentHub - Guards en accion (recorrido real en Chrome)
+
+authGuard, sin sesion: se abre /dashboard -> URL final: /login?returnUrl=%2Fdashboard
+Tras el login (cualquier email y contrasena): URL = /dashboard (token opaco en sessionStorage)
+Resolver: /empleados/1 -> el perfil aparece con datos: Leanne Graham
+cambiosPendientesGuard: con datos escritos en /empleados/nuevo, al salir -> confirm("¿Salir sin guardar los cambios?"); se cancela -> URL = /empleados/nuevo
+Cerrar sesion: token = null -> URL = /login

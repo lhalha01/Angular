@@ -49,13 +49,14 @@ que sugiere comprobar que el backend está arrancado.
 
 | Ruta | Componente |
 | --- | --- |
+| `/login` | `Login` (única pantalla pública: sirve cualquier email y contraseña) |
 | `/` | `HomeComponent` |
 | `/tasks` | `TaskListComponent` (búsqueda, filtros, orden y paginación; borrado con diálogo de confirmación) |
 | `/tasks/:id` | `TaskDetailComponent` |
 | `/tasks/:id/edit` | `TaskEditComponent` (ruta hija de `:id`) |
 | `/add-task` | `AddTaskComponent` |
 
-Cada pantalla es un chunk propio (`loadComponent`); la feature `tareas` aporta sus rutas con `loadChildren`
+**Todo salvo `/login` exige sesión**: `authGuard` (`canMatch`) redirige a `/login?returnUrl=<destino>` y los chunks protegidos ni se descargan. Cada pantalla es un chunk propio (`loadComponent`); la feature `tareas` aporta sus rutas con `loadChildren`
 (`tareas.routes.ts`) y `home` se carga por su barrel. El `:id` llega como `input()` (`withComponentInputBinding`).
 `/add-task` y `/tasks/:id/edit` llevan un guard `canDeactivate` (`unsavedChangesGuard`): si hay cambios sin guardar,
 antes de salir (enlace, Cancelar o botón atrás) se pide confirmación; cerrar o recargar la pestaña usa el aviso
@@ -78,10 +79,11 @@ nativo del navegador.
 ```text
 src/app
 ├── core/                       infraestructura sin lógica de negocio; no depende de features
-│   ├── guards/                 unsaved-changes.guard (canDeactivate)
+│   ├── guards/                 auth.guard (canMatch: sin sesión → /login?returnUrl=…), unsaved-changes.guard (canDeactivate)
+│   ├── login/                  pantalla de acceso (simulada; token opaco en sessionStorage)
 │   ├── interceptors/           (vacía: la rellena el Lab 14)
-│   ├── layout/navbar/          cabecera: marca, título del nivel, enlaces y selector de tema
-│   ├── services/               in-memory-resource (base común del estado en memoria), ignore-server-outcome,
+│   ├── layout/navbar/          cabecera: marca, título del nivel y tema; con sesión, enlaces y «Cerrar sesión»
+│   ├── services/               auth (sesión simulada), in-memory-resource (base común del estado en memoria), ignore-server-outcome,
 │   │                           storage (localStorage que nunca lanza), theme, toast, confirm
 │   └── api-error.ts            describeApiError: texto para el usuario cuando la API falla
 ├── shared/                     piezas reutilizables sin lógica de negocio; no depende de features
@@ -128,7 +130,7 @@ Alias de rutas (`tsconfig.json`): `@core/*`, `@shared/*` y `@features/*`. La arq
 - **Ciclo de vida**: `TaskFormComponent.ngOnChanges` reinicia el formulario con una copia cada vez que el padre pasa
   un valor inicial; `TaskListComponent.ngOnInit` lee los filtros de la URL; `ToastService.ngOnDestroy` cancela los
   temporizadores pendientes. El resto del estado reactivo usa signals y `effect()`, que se limpian solos.
-- **Pruebas**: `npm test` ejecuta 229 tests (cobertura ≈99 % de líneas: 99,45 %), incluida una prueba de integración
+- **Pruebas**: `npm test` ejecuta 252 tests (cobertura ≈99 % de líneas: 99,49 %), incluida una prueba de integración
   de las rutas reales. 40 de ellos cubren el modo del backend propio: ids y fechas del servidor, errores que
   llegan al usuario, "Deshacer" contra la API (incluido el 409) y los formularios de crear y editar.
 - **UserService** (servicio mock de `Servicios_mock.md`): listar, obtener por id, crear (POST) y eliminar (DELETE)
@@ -171,6 +173,7 @@ Alias de rutas (`tsconfig.json`): `@core/*`, `@shared/*` y `@features/*`. La arq
 | Modelos movidos a `src/app/models/`, con tipos derivados por Utility Types (`NewTask`, `UpdateTask`, `TaskSummary`) | 11.2 |
 | Type guards `isTask` e `isUser` aplicados a las respuestas HTTP: los elementos con forma inválida se descartan y una respuesta que no es una lista se trata como error de carga | 11.2 |
 | Arquitectura por features: `core/`, `shared/` y `features/{home,tareas,usuarios}` con barrels, alias `@core`, `@shared` y `@features`, rutas por feature (`loadChildren`), `NavbarComponent` en `core/layout`, regla de ESLint y `npm run check:architecture` | 12.2 |
+| Router profesional: pantalla de login, `AuthService` (token en `sessionStorage`), `authGuard` como `canMatch` y cabecera que reacciona a la sesión; el resolver y el guard de cambios sin guardar ya existían | 13.2 |
 
 ### Diferencias del Lab 12.2 con su enunciado
 
@@ -179,6 +182,19 @@ Alias de rutas (`tsconfig.json`): `@core/*`, `@shared/*` y `@features/*`. La arq
 - **Barrels:** los tipos se exportan con `export type { … }` (`isolatedModules`) y solo exponen lo que otras partes usan (`TaskActions` es interno de `tareas`). Cada ruta de `paths` empieza por `./` (sin él, TS5090).
 - **Rutas por feature:** `app.routes.ts` carga `tareas` con `loadChildren` a `tareas.routes.ts` y `home` por su barrel; es lo único que se admite importar fuera del barrel.
 - **Piezas añadidas al esquema:** `core/services`, `shared/directives`, `features/home`, `tareas.routes.ts` y `task.resolver.ts`. La cabecera se extrajo a `core/layout/navbar`; `core/interceptors` y `features/usuarios/components` quedan vacías (`.gitkeep`) hasta los Labs que las usan.
+
+### Diferencias del Lab 13.2 con su enunciado
+
+- **`authGuard` es un `CanMatchFn`**, no un `CanActivateFn`: el enunciado lo usa en `canMatch` pero lee `state.url`, que ahí no existe (recibe los segmentos). El destino sale de la navegación en curso y, si no hay, de los segmentos.
+- **URLs:** se mantienen `/tasks`, `/tasks/:id`, `/tasks/:id/edit` y `/add-task` (el enunciado habla de `/tareas`); un cambio de URL rompería enlaces y tests sin aportar nada.
+- **No hay ruta `/usuarios`**: el enunciado carga `usuarios.routes`, pero la aplicación no tiene pantalla de usuarios (solo los usa como datos); la feature `usuarios` sigue sin rutas.
+- **El resolver y el guard de cambios pendientes ya existían** (`taskResolver`, y `unsavedChangesGuard`, que usa el diálogo propio en lugar de `confirm()`), así que las Fases 3 y 4 no cambian código: se comprueban con los tests de rutas y con la captura.
+- **El token no es un parámetro del usuario**: `login(token)` recibe un identificador opaco que genera la pantalla de login (`crypto.randomUUID()`); email y contraseña no se comprueban en ningún sitio. La clave de `sessionStorage` es `auth_token`.
+- **`AuthService.autenticado` (señal)** además de `estaAutenticado()`: la cabecera necesita reaccionar sin recargar; `estaAutenticado()` sigue leyendo `sessionStorage`, que es la fuente de verdad de los guards.
+- **El inicio (`/`) también exige sesión**, y la cabecera sin sesión solo muestra la marca y el tema.
+- **La API:** el recorrido de las evidencias usa el backend local (`/todos` y `/users`); los tests no necesitan red.
+
+Evidencias del Lab 13.2 en [`../../Lab 13/Lab 13.2/evidencias/`](../../Lab%2013/Lab%2013.2/evidencias/) (Network con los chunks lazy, guards en acción y resolver).
 
 Evidencias del Lab 12.2 en [`../../Lab 12/Lab 12.2/evidencias/`](../../Lab%2012/Lab%2012.2/evidencias/) (estructura de carpetas, `ng build`, lint y arquitectura, app en marcha).
 

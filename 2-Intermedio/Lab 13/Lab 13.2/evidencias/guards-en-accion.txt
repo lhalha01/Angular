@@ -1,0 +1,7 @@
+Lab 13.2 - Gestor de Tareas - Guards en accion (recorrido real en Chrome)
+
+authGuard, sin sesion: se abre /tasks -> URL final: /login?returnUrl=%2Ftasks
+Tras el login (cualquier email y contrasena): URL = /tasks (Mostrando 1–10 de 200 tareas; token opaco en sessionStorage)
+Resolver: /tasks/1 -> el detalle aparece con datos: delectus aut autem
+unsavedChangesGuard: con el titulo modificado en /tasks/1/edit, al salir -> dialogo "Cambios sin guardar Si sales ahora, se perderán los cambios del formulario. Seguir editando Salir sin guardar"; se elige Seguir editando -> URL = /tasks/1/edit
+Cerrar sesion: token = null -> URL = /login

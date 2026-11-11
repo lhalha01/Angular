@@ -1,0 +1,16 @@
+Lab 13.1 - TalentHub - Network (carga diferida). Recorrido real en Chrome contra el build de produccion.
+Formato: paso | archivo (nombre del chunk) | LAZY | estado | tamano
+
+1. Sin sesión: se abre /dashboard | chunk-IZZU7XD7.js |  | 200 | 0.46 kB
+1. Sin sesión: se abre /dashboard | polyfills-Y2ZPEAG3.js (polyfills) |  | 200 | 33.77 kB
+1. Sin sesión: se abre /dashboard | chunk-SCBSW2ZK.js |  | 200 | 104.70 kB
+1. Sin sesión: se abre /dashboard | chunk-NVWLX4JC.js |  | 200 | 124.98 kB
+1. Sin sesión: se abre /dashboard | main-GP6WWN6W.js (main) |  | 200 | 1.25 kB
+1. Sin sesión: se abre /dashboard | chunk-5FDGL3ZD.js (login-component) | LAZY | 200 | 1.87 kB
+2. Login (cualquier email y contraseña) | chunk-2QJ5GOOH.js (dashboard-routes) | LAZY | 200 | 0.55 kB
+2. Login (cualquier email y contraseña) | chunk-XZVVR35Z.js (shell-component) | LAZY | 200 | 3.12 kB
+3. Navegar a /empleados | chunk-QZY3XVO5.js (empleados-routes) | LAZY | 200 | 6.27 kB
+3. Navegar a /empleados | GET /users |  | 200 | —
+4. Abrir /empleados/1 (resolver) | GET /users/1 |  | 200 | —
+5. Navegar a /proyectos | chunk-3JJLLBOD.js (proyectos-routes) | LAZY | 200 | 0.54 kB
+6. /empleados/nuevo con cambios sin guardar | GET /users |  | 200 | —

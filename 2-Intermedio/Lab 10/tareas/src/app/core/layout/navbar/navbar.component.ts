@@ -1,8 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
 import { ThemeService } from '../../services/theme.service';
 
-/** Cabecera de la aplicación: marca, título del nivel, enlaces principales y selector de tema. */
+/**
+ * Cabecera de la aplicación: marca, título del nivel, selector de tema y, con sesión iniciada, los enlaces
+ * principales y «Cerrar sesión». Sin sesión solo se ve la marca y el tema (el login no tiene menú).
+ */
 @Component({
   selector: 'app-navbar',
   imports: [RouterLink, RouterLinkActive],
@@ -12,9 +16,11 @@ import { ThemeService } from '../../services/theme.service';
       <div class="brand">ToDo App</div>
       <div class="level-title">Angular nivel intermedio</div>
       <nav class="nav">
-        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Inicio</a>
-        <a routerLink="/tasks" routerLinkActive="active">Tareas</a>
-        <a routerLink="/add-task" routerLinkActive="active">Agregar</a>
+        @if (auth.autenticado()) {
+          <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Inicio</a>
+          <a routerLink="/tasks" routerLinkActive="active">Tareas</a>
+          <a routerLink="/add-task" routerLinkActive="active">Agregar</a>
+        }
         <button
           type="button"
           class="theme-toggle"
@@ -24,6 +30,9 @@ import { ThemeService } from '../../services/theme.service';
         >
           {{ themeService.theme() === 'dark' ? '☀️ Claro' : '🌙 Oscuro' }}
         </button>
+        @if (auth.autenticado()) {
+          <button type="button" class="salir" (click)="cerrarSesion()">Cerrar sesión</button>
+        }
       </nav>
     </header>
   `,
@@ -36,11 +45,20 @@ import { ThemeService } from '../../services/theme.service';
     .nav a:hover, .nav a.active { background: var(--nav-hover); }
     .theme-toggle { border: 1px solid var(--border); background: var(--btn-ghost-bg); color: var(--text); border-radius: 999px; padding: 0.5rem 0.9rem; cursor: pointer; font-weight: 600; }
     .theme-toggle:hover { background: var(--nav-hover); }
+    .salir { border: 1px solid var(--border); background: transparent; color: var(--text); border-radius: 999px; padding: 0.5rem 0.9rem; cursor: pointer; font-weight: 600; }
+    .salir:hover { background: var(--nav-hover); }
   `,
 })
 export class NavbarComponent {
+  protected readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
   protected readonly themeService = inject(ThemeService);
   protected readonly label = computed(() =>
     this.themeService.theme() === 'dark' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro',
   );
+
+  protected cerrarSesion(): void {
+    this.auth.logout();
+    void this.router.navigateByUrl('/login');
+  }
 }

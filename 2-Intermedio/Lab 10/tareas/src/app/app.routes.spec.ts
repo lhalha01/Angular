@@ -5,6 +5,7 @@ import { provideRouter, Router, withComponentInputBinding } from '@angular/route
 import { RouterTestingHarness } from '@angular/router/testing';
 import { routes } from './app.routes';
 import { Task } from '@features/tareas';
+import { AuthService } from '@core/services/auth.service';
 import { ConfirmService } from '@core/services/confirm.service';
 import { TaskService } from '@features/tareas';
 
@@ -15,12 +16,16 @@ const SEED: Task[] = [
   { id: 2, userId: 1, title: 'Llamar al médico', completed: false, createdAt: '2024-01-02T00:00:00Z' },
 ];
 
-/** Integración de las rutas reales: resolver, herencia del :id y navegación entre hijas. */
+/** Integración de las rutas reales: resolver, herencia del :id y navegación entre hijas (con sesión iniciada). */
 describe('task routes', () => {
+  afterEach(() => sessionStorage.clear());
+
   async function setup() {
+    sessionStorage.clear();
     TestBed.configureTestingModule({
       providers: [provideRouter(routes, withComponentInputBinding()), provideHttpClient(), provideHttpClientTesting()],
     });
+    TestBed.inject(AuthService).login('t'); // las rutas exigen sesión (Lab 13.2)
     const http = TestBed.inject(HttpTestingController);
     TestBed.inject(TaskService); // arranca la carga inicial
     http.expectOne(TODOS).flush(SEED);
@@ -170,5 +175,58 @@ describe('task routes', () => {
       await router.navigateByUrl('/');
       expect(ask).not.toHaveBeenCalled();
     });
+  });
+});
+
+/** Lab 13.2: sin sesión, todo salvo el login redirige a /login recordando el destino. */
+describe('protected routes (no session)', () => {
+  beforeEach(() => sessionStorage.clear());
+  afterEach(() => sessionStorage.clear());
+
+  async function setup() {
+    TestBed.configureTestingModule({
+      providers: [provideRouter(routes, withComponentInputBinding()), provideHttpClient(), provideHttpClientTesting()],
+    });
+    const harness = await RouterTestingHarness.create();
+    return { harness, router: TestBed.inject(Router) };
+  }
+
+  it('redirects /tasks to /login?returnUrl=%2Ftasks', async () => {
+    const { harness, router } = await setup();
+    await harness.navigateByUrl('/tasks');
+    expect(router.url).toBe('/login?returnUrl=%2Ftasks');
+  });
+
+  it('keeps the whole destination, including the id and the child route', async () => {
+    const { harness, router } = await setup();
+    await harness.navigateByUrl('/tasks/2/edit');
+    expect(router.url).toBe('/login?returnUrl=%2Ftasks%2F2%2Fedit');
+  });
+
+  it('redirects the add-task form, the home page and unknown routes', async () => {
+    const { harness, router } = await setup();
+    await harness.navigateByUrl('/add-task');
+    expect(router.url).toBe('/login?returnUrl=%2Fadd-task');
+    await harness.navigateByUrl('/');
+    expect(router.url).toBe('/login?returnUrl=%2F');
+    await harness.navigateByUrl('/no-existe');
+    expect(router.url).toBe('/login?returnUrl=%2Fno-existe');
+  });
+
+  it('keeps the login page reachable', async () => {
+    const { harness, router } = await setup();
+    await harness.navigateByUrl('/login');
+    expect(router.url).toBe('/login');
+    expect(harness.routeNativeElement?.textContent).toContain('Iniciar sesión');
+  });
+
+  it('logging out protects the routes again', async () => {
+    const { harness, router } = await setup();
+    TestBed.inject(AuthService).login('t');
+    await harness.navigateByUrl('/');
+    expect(router.url).toBe('/');
+    TestBed.inject(AuthService).logout();
+    await harness.navigateByUrl('/add-task');
+    expect(router.url).toBe('/login?returnUrl=%2Fadd-task');
   });
 });
