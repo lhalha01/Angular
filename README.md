@@ -16,7 +16,7 @@ carpeta `Lab NN`, con su enunciado (`Lab NN.md`) y, cuando corresponde, el proye
 | Nivel | Carpeta | Laboratorios | Práctica final | Estado |
 | --- | --- | --- | --- | --- |
 | Básico | `1-Basico` | Lab 01 a Lab 09 | Lab 10 y Lab 10.1 | Completado |
-| Intermedio | `2-Intermedio` | Lab 11 a Lab 19 | Lab 20 y Lab 20.1 | En preparación (enunciados añadidos, sin proyectos) |
+| Intermedio | `2-Intermedio` | Lab 11 a Lab 19 | Lab 20 y Lab 20.1 | En preparación (enunciados de Lab 11 a Lab 13 añadidos; sin proyectos) |
 | Avanzado | `3-Avanzado` | Lab 21 a Lab 28 | Lab 29 | Pendiente (enunciados por añadir) |
 
 ## Proyectos del nivel Básico
@@ -141,7 +141,7 @@ Hay que confirmar que su carpeta **no** coincide con ningún patrón de `workspa
 
 Las prácticas finales documentan en su propio `README.md` la revisión de integridad
 (`npm audit signatures`), la de vulnerabilidades (`npm audit`) y las versiones utilizadas.
-Resumen a fecha de 2026-11-10:
+Resumen a fecha de 2026-11-11:
 
 | Práctica | Firmas verificadas | Vulnerabilidades en producción | Vulnerabilidades totales |
 | --- | --- | --- | --- |
@@ -149,6 +149,9 @@ Resumen a fecha de 2026-11-10:
 | Lab 10.1 | 541 | 0 | 16 moderadas (herramientas de desarrollo) |
 
 Todas las entradas de los `package-lock.json` llevan hash de integridad y proceden del registro de npm.
+
+**Backend (Python):** `requirements.txt` fija todas las versiones; `pip check` no encuentra conflictos y
+`pip-audit` no encuentra vulnerabilidades conocidas. Detalle en [`backend/README.md`](backend/README.md).
 
 ## Notas
 
