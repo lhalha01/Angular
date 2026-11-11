@@ -1,9 +1,9 @@
 # Gestor de Tareas (Angular 20)
 
-SPA para gestionar tareas: listar, filtrar, ver detalle, crear, editar y eliminar. Por defecto consume
-[JSONPlaceholder](https://jsonplaceholder.typicode.com) (`/todos` y `/users`); como esa API no persiste
-cambios, el estado se mantiene **en memoria** durante la sesión. Opcionalmente puede usar el **backend propio**
-de la carpeta `backend/` del repositorio (véase más abajo), que sí guarda los cambios.
+SPA para gestionar tareas: listar, filtrar, ver detalle, crear, editar y eliminar. En el nivel Intermedio **usa siempre
+el backend propio** de la carpeta `backend/` del repositorio (APIs locales `/todos` y `/users`, FastAPI + SQLite), que
+guarda los cambios. La API pública ([JSONPlaceholder](https://jsonplaceholder.typicode.com), sin persistencia: el estado
+vive solo en memoria) queda como opción explícita (`npm run start:public`) y es la que usan los tests.
 
 ## Requisitos
 
@@ -18,34 +18,32 @@ de `2-Intermedio`: **comparte el `node_modules` con los demás Labs del nivel** 
 (el del workspace está en `2-Intermedio/`).
 
 ```bash
+# 1. backend (desde la carpeta backend/ del repositorio; necesita Python 3.11 o superior)
+.start.cmd              # Windows;  en Linux/macOS: ./start.sh
+
+# 2. aplicación
 cd 2-Intermedio
 npm install                      # una sola vez para todo el nivel
 cd "Lab 10/tareas"
-npm start                        # http://localhost:4200/
+npm start                        # http://localhost:4200/, hablando con http://localhost:8000
 ```
 
 Para instalar de forma reproducible y verificando los hashes del lockfile se puede usar `npm ci`.
 
-Otros comandos: `npm run build` (producción), `npm run lint` y `npm test` (Karma + Jasmine; en CI:
-`npx ng test --watch=false --browsers=ChromeHeadless`).
+Otros comandos: `npm run build` (producción, también contra el backend local), `npm run lint`, `npm test` (Karma +
+Jasmine; en CI: `npx ng test --watch=false --browsers=ChromeHeadless`; no necesita el backend) y
+`npm run start:public` (API pública, sin persistencia).
 
-### Opcional: con el backend propio (los cambios se guardan)
+### Configuraciones de la API
 
-Con la API pública, lo que se crea, edita o borra se pierde al recargar. Con el backend de la carpeta
-[`backend/`](../../../backend/README.md) del repositorio (FastAPI + SQLite, necesita Python 3.11 o superior) se
-guarda. En dos terminales:
+| Comando | API | Persistencia |
+| --- | --- | --- |
+| `npm start`, `npm run build` | Backend propio (`http://localhost:8000`, `environment.local.ts`) | Sí (SQLite) |
+| `npm run start:public` | JSONPlaceholder (`environment.ts`) | No: los cambios se pierden al recargar |
+| `npm test` | Sin red: peticiones simuladas (por defecto, modo de la API pública) | — |
 
-```bash
-# 1. backend (desde la carpeta backend/ del repositorio)
-.\start.cmd              # Windows;  en Linux/macOS: ./start.sh
-
-# 2. aplicación, en la configuración "local"
-cd "2-Intermedio/Lab 10/tareas"
-npm run start:local      # http://localhost:4200/, hablando con http://localhost:8000
-```
-
-`npm start` no necesita el backend para nada. Sin él, `npm run start:local` muestra el error de carga de la
-lista (con "Reintentar") y, al guardar, un aviso que sugiere comprobar que el backend está arrancado.
+Sin el backend arrancado, `npm start` muestra el error de carga de la lista (con "Reintentar") y, al guardar, un aviso
+que sugiere comprobar que el backend está arrancado.
 
 ## Rutas
 
@@ -166,6 +164,7 @@ Alias de rutas (`tsconfig.json`): `@core/*`, `@shared/*` y `@features/*`. La arq
 | --- | --- |
 | Builders de `@angular-devkit/build-angular` (webpack) a `@angular/build`, para compartir dependencias con el nivel; paquete `tareas-lab-11` | — |
 | Título «Angular nivel intermedio» en la cabecera, para distinguirla de la del Básico | — |
+| `npm start` y `ng build` usan el backend local por defecto; la API pública pasa a `npm run start:public` (se sustituye `start:local`) | — |
 | ESLint (`npm run lint`) con la configuración del Lab 11.1: **0 errores**, `no-explicit-any` como error | 11.2 |
 | `confirm-dialog`: el clic sobre el fondo ya no usa `(click)` en la plantilla (2 errores de accesibilidad); el equivalente de teclado es Escape | 11.2 |
 | Las 4 llamadas `HttpClient` que no llevaban tipo (`post`, `put`, `delete` de `InMemoryResource`) ahora lo llevan | 11.2 |

@@ -74,7 +74,7 @@ Estado actual por nivel:
 
 No hay `package.json` en la raíz del repositorio.
 
-## Backend (opcional)
+## Backend (opcional en el Básico; obligatorio en el Intermedio)
 
 Las prácticas usan por defecto APIs públicas de mentira (JSONPlaceholder), que no guardan los cambios.
 La carpeta [`backend/`](backend/README.md) ofrece APIs locales con **FastAPI y SQLite** que sí los guardan, y
@@ -85,6 +85,9 @@ del resto del repositorio lo necesita para funcionar. Guía paso a paso: [`backe
 | --- | --- | --- |
 | Lab 10.1 | Sí (recurso `/users`) | `npm run start:local` |
 | Lab 10 | Sí (recursos `/todos` y `/users`) | `npm run start:local` |
+| Lab 10 del Intermedio (`2-Intermedio/Lab 10/tareas`) | **Siempre** (recursos `/todos` y `/users`) | `npm start`, con el backend arrancado; la API pública solo con `npm run start:public` |
+
+**En el nivel Intermedio se usan siempre las APIs locales del backend.** Si un Lab necesitara un recurso o un campo que el backend no tiene, se plantea antes de crearlo.
 
 ## Requisitos
 
