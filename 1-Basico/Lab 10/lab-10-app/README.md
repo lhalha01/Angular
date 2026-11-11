@@ -1,8 +1,9 @@
 # Gestor de Tareas (Angular 20)
 
-SPA para gestionar tareas: listar, filtrar, ver detalle, crear, editar y eliminar. Consume
-[JSONPlaceholder](https://jsonplaceholder.typicode.com) (`/todos` y `/users`); como la API no persiste
-cambios, el estado se mantiene **en memoria** durante la sesión.
+SPA para gestionar tareas: listar, filtrar, ver detalle, crear, editar y eliminar. Por defecto consume
+[JSONPlaceholder](https://jsonplaceholder.typicode.com) (`/todos` y `/users`); como esa API no persiste
+cambios, el estado se mantiene **en memoria** durante la sesión. Opcionalmente puede usar el **backend propio**
+de la carpeta `backend/` del repositorio (véase más abajo), que sí guarda los cambios.
 
 ## Requisitos
 
@@ -25,6 +26,24 @@ Para instalar de forma reproducible y verificando los hashes del lockfile se pue
 
 Otros comandos: `npm run build` (producción) y `npm test` (Karma + Jasmine; en CI:
 `npx ng test --watch=false --browsers=ChromeHeadless`).
+
+### Opcional: con el backend propio (los cambios se guardan)
+
+Con la API pública, lo que se crea, edita o borra se pierde al recargar. Con el backend de la carpeta
+[`backend/`](../../../backend/README.md) del repositorio (FastAPI + SQLite, necesita Python 3.11 o superior) se
+guarda. En dos terminales:
+
+```bash
+# 1. backend (desde la carpeta backend/ del repositorio)
+.\start.cmd              # Windows;  en Linux/macOS: ./start.sh
+
+# 2. aplicación, en la configuración "local"
+cd "1-Basico/Lab 10/lab-10-app"
+npm run start:local      # http://localhost:4200/, hablando con http://localhost:8000
+```
+
+`npm start` no necesita el backend para nada. Sin él, `npm run start:local` muestra el error de carga de la
+lista (con "Reintentar") y, al guardar, un aviso que sugiere comprobar que el backend está arrancado.
 
 ## Rutas
 
@@ -60,7 +79,9 @@ src/app
 ├── core/                  modelos y servicios sin interfaz
 │   ├── in-memory-resource.ts   base común de TaskService y UserService (estado en memoria)
 │   ├── ignore-server-outcome.ts  qué se hace con las respuestas de la API simulada
+│   ├── api-error.ts            describeApiError: texto para el usuario cuando la API falla
 │   └── storage.service.ts      localStorage que nunca lanza (tema y vista)
+├── environments/          URL de la API y modo (`persistentApi`) según la configuración de compilación
 ├── shared/                piezas reutilizables sin lógica de negocio
 │   ├── paginator/         <app-paginator> + paginate() (lógica pura)
 │   ├── state-message/     tarjeta de estado: cargando, error, vacío, no encontrado
@@ -88,11 +109,21 @@ src/app
 - **API simulada**: las escrituras (POST/PUT/DELETE) se envían, pero `ignoreServerOutcome` hace explícito, en un único
   sitio, que ni su respuesta ni su error cambian el resultado. Con una API real habría que quitarlo para que los
   errores llegaran al usuario. Los errores de la carga inicial sí se muestran (con "Reintentar").
+- **Dos modos de API (`environment.persistentApi`)**, resueltos solo en `InMemoryResource` para que el resto de la
+  aplicación no se entere. Con el backend propio (configuración `local`): el id y la fecha de creación los asigna el
+  servidor (no se envía el id del cliente) y se guarda lo que responde; **los errores de la API dejan de ignorarse** y
+  llegan al usuario con `describeApiError` (por ejemplo, "no se pudo conectar con el servidor. ¿Está arrancado el
+  backend?"); y **"Deshacer"** recrea la tarea en el servidor con su mismo id y su fecha (`POST` con `id`), y avisa
+  si el servidor responde 409 porque el id está ocupado. Por eso `restoreTask` devuelve un `Observable<boolean>` en
+  lugar de un booleano. La API pública sigue funcionando exactamente como antes.
+- **Borrar usuarios con el backend propio** borra también sus tareas allí (borrado en cascada). La aplicación no
+  ofrece borrar usuarios, así que no se ve afectada; si se añadiera, habría que recargar las tareas después.
 - **Ciclo de vida**: `TaskFormComponent.ngOnChanges` reinicia el formulario con una copia cada vez que el padre pasa
   un valor inicial; `TaskListComponent.ngOnInit` lee los filtros de la URL; `ToastService.ngOnDestroy` cancela los
   temporizadores pendientes. El resto del estado reactivo usa signals y `effect()`, que se limpian solos.
-- **Pruebas**: `npm test` ejecuta ≈180 tests (cobertura ≈98 % de líneas), incluida una prueba de integración
-  de las rutas reales.
+- **Pruebas**: `npm test` ejecuta 221 tests (cobertura ≈99 % de líneas), incluida una prueba de integración
+  de las rutas reales. 40 de ellos cubren el modo del backend propio: ids y fechas del servidor, errores que
+  llegan al usuario, "Deshacer" contra la API (incluido el 409) y los formularios de crear y editar.
 - **UserService** (servicio mock de `Servicios_mock.md`): listar, obtener por id, crear (POST) y eliminar (DELETE)
   usuarios en JSONPlaceholder, con estado en memoria. Se usa para cruzar tarea → nombre de usuario.
 - **Directiva** `appHighlightUser`: resalta nombres que empiezan por vocal (admite tildes).

@@ -79,6 +79,13 @@ describe('UserList', () => {
     expect(rows().length).toBe(5);
   });
 
+  it('con la API pública no consulta tareas: la confirmación es la sencilla', () => {
+    const confirm = spyOn(window, 'confirm').and.returnValue(false);
+    click('.btn-danger', 0);
+    http.expectNone((r) => r.url.includes('/todos'));
+    expect(confirm).toHaveBeenCalledOnceWith('¿Eliminar a Nombre1 Apellido1?');
+  });
+
   it('no elimina nada si se cancela la confirmación', () => {
     spyOn(window, 'confirm').and.returnValue(false);
     click('.btn-danger', 0);

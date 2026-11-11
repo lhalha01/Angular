@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { environment } from '../../../environments/environment';
 import { InMemoryResource } from './in-memory-resource';
 
 interface Item {
@@ -169,22 +170,34 @@ describe('InMemoryResource', () => {
   describe('restore', () => {
     beforeEach(load);
 
+    /** Con la API de mentira restaurar es inmediato (no hay petición): el resultado llega al suscribirse. */
+    const restore = (item: Item, index: number): boolean | undefined => {
+      let result: boolean | undefined;
+      resource.restore(item, index).subscribe((restored) => (result = restored));
+      return result;
+    };
+
     it('puts a deleted item back in its original position', () => {
       const item = resource.items()[1];
       resource.remove(2).subscribe();
       http.expectOne(`${URL}/2`).flush({});
-      expect(resource.restore(item, 1)).toBeTrue();
+      expect(restore(item, 1)).toBeTrue();
       expect(names()).toEqual(['UNO', 'DOS', 'TRES']);
     });
 
     it('appends when the original position no longer exists', () => {
-      expect(resource.restore({ id: 9, name: 'nueve' }, 50)).toBeTrue();
+      expect(restore({ id: 9, name: 'nueve' }, 50)).toBeTrue();
       expect(resource.items().at(-1)?.id).toBe(9);
     });
 
     it('refuses to restore an id that is already in use', () => {
-      expect(resource.restore({ id: 1, name: 'duplicado' }, 0)).toBeFalse();
+      expect(restore({ id: 1, name: 'duplicado' }, 0)).toBeFalse();
       expect(resource.items().length).toBe(3);
+    });
+
+    it('does not send any request to restore (the fake API forgets everything anyway)', () => {
+      expect(restore({ id: 9, name: 'nueve' }, 0)).toBeTrue();
+      http.expectNone({ method: 'POST' });
     });
   });
 
@@ -193,6 +206,151 @@ describe('InMemoryResource', () => {
       expect(resource.next()).toBe(1);
       load();
       expect(resource.next()).toBe(4);
+    });
+  });
+});
+
+/** Con el backend propio (`persistentApi`): usa lo que responde el servidor y deja pasar sus errores. */
+describe('InMemoryResource with the own backend (persistentApi)', () => {
+  const original = { ...environment };
+  let http: HttpTestingController;
+  let resource: FakeResource;
+  const names = () => resource.items().map((i) => i.name);
+  const load = () => http.expectOne({ method: 'GET', url: URL }).flush(SEED);
+  const serverError = (status: number) => ({ status, statusText: 'error' });
+
+  beforeEach(() => {
+    environment.persistentApi = true;
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+    http = TestBed.inject(HttpTestingController);
+    resource = TestBed.runInInjectionContext(() => new FakeResource());
+    load();
+  });
+
+  afterEach(() => {
+    http.verify();
+    Object.assign(environment, original); // no contaminar al resto de tests
+  });
+
+  describe('add', () => {
+    it('sends the item without its client-side id and keeps what the server answers', () => {
+      let created: Item | undefined;
+      resource.add({ id: 4, name: 'cuatro' }).subscribe((item) => (created = item));
+      const req = http.expectOne({ method: 'POST', url: URL });
+      expect(req.request.body).toEqual({ name: 'cuatro' }); // sin id: lo asigna el servidor
+      req.flush({ id: 77, name: 'cuatro' });
+
+      expect(created).toEqual({ id: 77, name: 'CUATRO' }); // el id es el del servidor (y pasa por prepare)
+      expect(resource.items().at(-1)?.id).toBe(77);
+    });
+
+    it('adds at the start when asked', () => {
+      resource.add({ id: 4, name: 'cuatro' }, 'start').subscribe();
+      http.expectOne({ method: 'POST', url: URL }).flush({ id: 77, name: 'cuatro' });
+      expect(resource.items()[0].id).toBe(77);
+    });
+
+    it('propagates the API error and leaves the memory untouched', () => {
+      let failed: unknown;
+      resource.add({ id: 4, name: 'cuatro' }).subscribe({ error: (e) => (failed = e) });
+      http.expectOne({ method: 'POST', url: URL }).flush({ detail: 'mal' }, serverError(422));
+      expect(failed).toBeDefined();
+      expect(names()).toEqual(['UNO', 'DOS', 'TRES']);
+    });
+  });
+
+  describe('update', () => {
+    it('sends a PUT and keeps what the server answers', () => {
+      resource.update({ id: 2, name: 'nuevo' }).subscribe();
+      http.expectOne({ method: 'PUT', url: `${URL}/2` }).flush({ id: 2, name: 'del servidor' });
+      expect(names()).toEqual(['UNO', 'DEL SERVIDOR', 'TRES']);
+    });
+
+    it('propagates the API error and leaves the memory untouched', () => {
+      let failed: unknown;
+      resource.update({ id: 2, name: 'nuevo' }).subscribe({ error: (e) => (failed = e) });
+      http.expectOne({ method: 'PUT', url: `${URL}/2` }).flush({}, serverError(500));
+      expect(failed).toBeDefined();
+      expect(names()).toEqual(['UNO', 'DOS', 'TRES']);
+    });
+  });
+
+  describe('delete', () => {
+    it('removes the item once the API confirms it', () => {
+      let done = false;
+      resource.remove(2).subscribe(() => (done = true));
+      http.expectOne({ method: 'DELETE', url: `${URL}/2` }).flush(null, { status: 204, statusText: 'No Content' });
+      expect(done).toBeTrue();
+      expect(names()).toEqual(['UNO', 'TRES']);
+    });
+
+    it('propagates the API error and keeps the item', () => {
+      let failed: unknown;
+      resource.remove(2).subscribe({ error: (e) => (failed = e) });
+      http.expectOne({ method: 'DELETE', url: `${URL}/2` }).flush({}, serverError(404));
+      expect(failed).toBeDefined();
+      expect(names()).toEqual(['UNO', 'DOS', 'TRES']);
+    });
+
+    it('propagates a network failure (the backend is not running)', () => {
+      let failed: unknown;
+      resource.remove(2).subscribe({ error: (e) => (failed = e) });
+      http.expectOne({ method: 'DELETE', url: `${URL}/2` }).error(new ProgressEvent('error'));
+      expect(failed).toBeDefined();
+      expect(names()).toEqual(['UNO', 'DOS', 'TRES']);
+    });
+  });
+
+  describe('restore ("Deshacer")', () => {
+    const removeSecond = () => {
+      const item = resource.items()[1];
+      resource.remove(2).subscribe();
+      http.expectOne({ method: 'DELETE', url: `${URL}/2` }).flush(null, { status: 204, statusText: 'No Content' });
+      return item;
+    };
+
+    it('recreates the item in the API with its same id and puts it back in place', () => {
+      const item = removeSecond();
+      let restored: boolean | undefined;
+      resource.restore(item, 1).subscribe((r) => (restored = r));
+
+      const req = http.expectOne({ method: 'POST', url: URL });
+      expect(req.request.body).toEqual(item); // con su id: el servidor lo recrea tal cual
+      req.flush(item, { status: 201, statusText: 'Created' });
+
+      expect(restored).toBeTrue();
+      expect(names()).toEqual(['UNO', 'DOS', 'TRES']);
+    });
+
+    it('emits false when the server says the id is already in use (409)', () => {
+      const item = removeSecond();
+      let restored: boolean | undefined;
+      resource.restore(item, 1).subscribe((r) => (restored = r));
+      http.expectOne({ method: 'POST', url: URL }).flush({ detail: 'ocupado' }, serverError(409));
+      expect(restored).toBeFalse();
+      expect(names()).toEqual(['UNO', 'TRES']); // sin duplicados ni cambios
+    });
+
+    it('does not even ask the server when the id is already in memory', () => {
+      let restored: boolean | undefined;
+      resource.restore({ id: 1, name: 'duplicado' }, 0).subscribe((r) => (restored = r));
+      http.expectNone({ method: 'POST' });
+      expect(restored).toBeFalse();
+    });
+
+    it('propagates any other API error', () => {
+      const item = removeSecond();
+      let failed: unknown;
+      resource.restore(item, 1).subscribe({ error: (e) => (failed = e) });
+      http.expectOne({ method: 'POST', url: URL }).flush({}, serverError(500));
+      expect(failed).toBeDefined();
+      expect(names()).toEqual(['UNO', 'TRES']);
+    });
+
+    it('appends when the original position no longer exists', () => {
+      resource.restore({ id: 9, name: 'nueve' }, 50).subscribe();
+      http.expectOne({ method: 'POST', url: URL }).flush({ id: 9, name: 'nueve' }, { status: 201, statusText: 'Created' });
+      expect(resource.items().at(-1)?.id).toBe(9);
     });
   });
 });

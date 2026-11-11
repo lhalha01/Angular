@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
+import { environment } from '../../../../environments/environment';
 import { Task } from '../../../core/models/task.model';
 import { ToastService } from '../../../core/services/toast.service';
 import { TaskEditComponent } from './task-edit.component';
@@ -60,5 +61,56 @@ describe('TaskEditComponent', () => {
     el.querySelector<HTMLButtonElement>('button[type="button"]')!.click();
     expect(navigate).toHaveBeenCalledWith(['/tasks', 4]);
     http.expectNone({ method: 'PUT' });
+  });
+});
+
+/** Con el backend propio, si la API rechaza el cambio el usuario lo ve y se queda en el formulario. */
+describe('TaskEditComponent with the own backend (persistentApi)', () => {
+  const LOCAL_TODOS = 'http://localhost:8000/todos';
+  const LOCAL_USERS = 'http://localhost:8000/users';
+  const original = { ...environment };
+
+  afterEach(() => Object.assign(environment, original)); // no contaminar al resto de tests
+
+  async function setupAndSave() {
+    environment.apiUrl = 'http://localhost:8000';
+    environment.persistentApi = true;
+    TestBed.configureTestingModule({ providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()] });
+    const http = TestBed.inject(HttpTestingController);
+    const navigate = spyOn(TestBed.inject(Router), 'navigate').and.resolveTo(true);
+    const fixture = TestBed.createComponent(TaskEditComponent);
+    fixture.componentRef.setInput('task', TASK);
+    fixture.detectChanges();
+    http.match(LOCAL_USERS).forEach((r) => r.flush([{ id: 1, name: 'Leanne', username: 'l', email: 'l@l.com' }]));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    const title = el.querySelector<HTMLInputElement>('#title')!;
+    title.value = 'Título nuevo';
+    title.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    el.querySelector<HTMLButtonElement>('button[type="submit"]')!.click();
+    http.expectOne(LOCAL_TODOS).flush([TASK]); // carga inicial del TaskService
+    return { http, navigate, toast: TestBed.inject(ToastService) };
+  }
+
+  it('saves with a PUT to the backend, shows a toast and goes to the detail page', async () => {
+    const { http, navigate, toast } = await setupAndSave();
+    const put = http.expectOne({ method: 'PUT', url: `${LOCAL_TODOS}/4` });
+    expect(put.request.body.title).toBe('Título nuevo');
+    put.flush({ ...TASK, title: 'Título nuevo' });
+    expect(toast.toasts()[0].message).toContain('#4 actualizada');
+    expect(navigate).toHaveBeenCalledWith(['/tasks', 4]);
+  });
+
+  it('shows why it failed and stays on the form when the API rejects the change', async () => {
+    const { http, navigate, toast } = await setupAndSave();
+    http
+      .expectOne({ method: 'PUT', url: `${LOCAL_TODOS}/4` })
+      .flush({ detail: 'Tarea 4 no encontrada' }, { status: 404, statusText: 'Not Found' });
+    expect(toast.toasts().map((t) => t.message)).toEqual(['No se pudo actualizar la tarea: Tarea 4 no encontrada.']);
+    expect(navigate).not.toHaveBeenCalled();
   });
 });

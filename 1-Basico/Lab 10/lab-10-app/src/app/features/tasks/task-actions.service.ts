@@ -1,4 +1,5 @@
 import { inject, Injectable } from '@angular/core';
+import { describeApiError } from '../../core/api-error';
 import { Task } from '../../core/models/task.model';
 import { ConfirmService } from '../../core/services/confirm.service';
 import { TaskService } from '../../core/services/task.service';
@@ -23,8 +24,10 @@ export class TaskActions {
       confirmLabel: `Marcar como ${target}`,
     });
     if (!accepted) return;
-    this.tasks.updateTask({ ...task, completed: !task.completed }).subscribe(() => {
-      this.toast.show(`Tarea #${task.id} marcada como ${target}`);
+    this.tasks.updateTask({ ...task, completed: !task.completed }).subscribe({
+      next: () => this.toast.show(`Tarea #${task.id} marcada como ${target}`),
+      // Los errores de la API solo llegan con el backend propio (la pública los ignora).
+      error: (error: unknown) => this.toast.show(describeApiError(error, 'No se pudo cambiar el estado de la tarea')),
     });
   }
 
@@ -39,15 +42,23 @@ export class TaskActions {
     if (!accepted) return;
 
     const index = this.tasks.tasks().findIndex((t) => t.id === task.id);
-    this.tasks.deleteTask(task.id).subscribe(() => {
-      this.toast.show(`Tarea #${task.id} eliminada`, {
-        actionLabel: 'Deshacer',
-        duration: 8000,
-        action: () => {
-          if (this.tasks.restoreTask(task, index)) this.toast.show(`Tarea #${task.id} restaurada`);
-          else this.toast.show('No se pudo restaurar: el id ya está en uso');
-        },
-      });
+    this.tasks.deleteTask(task.id).subscribe({
+      next: () =>
+        this.toast.show(`Tarea #${task.id} eliminada`, {
+          actionLabel: 'Deshacer',
+          duration: 8000,
+          action: () => this.undo(task, index),
+        }),
+      error: (error: unknown) => this.toast.show(describeApiError(error, 'No se pudo eliminar la tarea')),
+    });
+  }
+
+  /** "Deshacer": con el backend propio recrea la tarea allí, con su mismo id y su fecha. */
+  private undo(task: Task, index: number): void {
+    this.tasks.restoreTask(task, index).subscribe({
+      next: (restored) =>
+        this.toast.show(restored ? `Tarea #${task.id} restaurada` : 'No se pudo restaurar: el id ya está en uso'),
+      error: (error: unknown) => this.toast.show(describeApiError(error, 'No se pudo restaurar la tarea')),
     });
   }
 }

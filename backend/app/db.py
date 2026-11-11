@@ -1,0 +1,209 @@
+"""Acceso a SQLite: creación del esquema, datos iniciales y conexión por petición.
+
+Se usa el módulo `sqlite3` de la biblioteca estándar (sin ORM) para que el proyecto
+tenga las mínimas dependencias. Cada petición abre su propia conexión, porque FastAPI
+ejecuta los endpoints síncronos en hilos distintos y las conexiones SQLite no se comparten.
+"""
+
+import json
+import logging
+import sqlite3
+from collections.abc import Callable, Iterator
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+from fastapi import Request
+
+from .config import SEED_DIR
+
+logger = logging.getLogger("uvicorn.error")
+
+USERS_SCHEMA = """
+CREATE TABLE users (
+    -- AUTOINCREMENT evita reutilizar el id de un usuario borrado.
+    id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    name     TEXT NOT NULL,
+    username TEXT,
+    email    TEXT NOT NULL,
+    phone    TEXT,
+    website  TEXT,
+    address  TEXT,   -- objeto JSON (street, suite, city, zipcode, geo)
+    company  TEXT    -- objeto JSON (name, catchPhrase, bs)
+);
+"""
+
+TODOS_COLUMNS = """
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    -- Clave foránea: una tarea siempre pertenece a un usuario que existe. Al borrar un usuario se
+    -- borran también sus tareas (ON DELETE CASCADE).
+    user_id    INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    title      TEXT NOT NULL,
+    completed  INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL   -- ISO 8601 en UTC, p. ej. 2026-11-11T09:30:00.000Z
+"""
+
+TODOS_SCHEMA = f"""
+CREATE TABLE todos ({TODOS_COLUMNS});
+CREATE INDEX idx_todos_user_id ON todos (user_id);
+"""
+
+# Versión del esquema (PRAGMA user_version). Las bases de datos anteriores valen 0.
+#   2: `todos.user_id` pasa a ser una clave foránea hacia `users` con borrado en cascada.
+SCHEMA_VERSION = 2
+
+
+def now_iso(moment: datetime | None = None) -> str:
+    """Fecha en el mismo formato que `Date.toISOString()` de JavaScript."""
+    moment = moment or datetime.now(timezone.utc)
+    return moment.astimezone(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+
+
+def connect(db_path: Path) -> sqlite3.Connection:
+    # `check_same_thread=False`: FastAPI abre la conexión (dependencia), la usa el endpoint y la
+    # cierra en hilos distintos del pool, así que SQLite la rechazaría con "objects created in a
+    # thread can only be used in that same thread" en cuanto llegan peticiones simultáneas. Es
+    # seguro porque cada conexión pertenece a UNA sola petición: nunca se usa desde dos hilos a la vez.
+    conn = sqlite3.connect(db_path, check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    # SQLite no aplica las claves foráneas salvo que se active en cada conexión.
+    conn.execute("PRAGMA foreign_keys = ON")
+    return conn
+
+
+def _seed_users(conn: sqlite3.Connection) -> None:
+    users = json.loads((SEED_DIR / "users.json").read_text(encoding="utf-8"))
+    conn.executemany(
+        "INSERT INTO users (id, name, username, email, phone, website, address, company) "
+        "VALUES (:id, :name, :username, :email, :phone, :website, :address, :company)",
+        [
+            {
+                **u,
+                "address": json.dumps(u.get("address")),
+                "company": json.dumps(u.get("company")),
+            }
+            for u in users
+        ],
+    )
+
+
+def _seed_todos(conn: sqlite3.Connection) -> None:
+    todos = json.loads((SEED_DIR / "todos.json").read_text(encoding="utf-8"))
+    # Solo las tareas de usuarios que existen (la clave foránea lo exige): si la base de datos ya
+    # existía y se había borrado algún usuario, sus tareas iniciales no se crean.
+    user_ids = {row["id"] for row in conn.execute("SELECT id FROM users")}
+    todos = [t for t in todos if t["userId"] in user_ids]
+    now = datetime.now(timezone.utc)
+    conn.executemany(
+        "INSERT INTO todos (id, user_id, title, completed, created_at) "
+        "VALUES (:id, :user_id, :title, :completed, :created_at)",
+        [
+            {
+                "id": t["id"],
+                "user_id": t["userId"],
+                "title": t["title"],
+                "completed": int(t["completed"]),
+                # JSONPlaceholder no trae fecha: cada tarea recibe una distinta (un minuto
+                # más antigua por cada id), para que "las más recientes" tenga sentido.
+                "created_at": now_iso(now - timedelta(minutes=t["id"])),
+            }
+            for t in todos
+        ],
+    )
+
+
+# Cada recurso: (tabla, esquema, función que carga sus datos iniciales).
+RESOURCES: list[tuple[str, str, Callable[[sqlite3.Connection], None]]] = [
+    ("users", USERS_SCHEMA, _seed_users),
+    ("todos", TODOS_SCHEMA, _seed_todos),
+]
+
+
+def _migrate_todos_add_foreign_key(conn: sqlite3.Connection) -> int:
+    """Esquema 0 → 2: reconstruye `todos` con la clave foránea hacia `users`.
+
+    SQLite no permite añadir una clave foránea a una tabla existente, así que se crea la tabla
+    nueva, se copian las tareas y se sustituye la antigua. Las tareas cuyo usuario ya no existe
+    (huérfanas) no se copian: con la relación en cascada, habrían desaparecido al borrar su usuario.
+    Conserva ids, fechas y el contador de ids (un id borrado nunca se reutiliza).
+    Devuelve cuántas tareas huérfanas se eliminaron.
+    """
+    conn.commit()  # PRAGMA foreign_keys solo se puede cambiar fuera de una transacción
+    conn.execute("PRAGMA foreign_keys = OFF")
+    try:
+        row = conn.execute("SELECT seq FROM sqlite_sequence WHERE name = 'todos'").fetchone()
+        last_id = row["seq"] if row else 0
+        before = conn.execute("SELECT COUNT(*) FROM todos").fetchone()[0]
+        conn.executescript(
+            f"""
+            BEGIN;
+            CREATE TABLE todos_new ({TODOS_COLUMNS});
+            INSERT INTO todos_new (id, user_id, title, completed, created_at)
+                SELECT id, user_id, title, completed, created_at FROM todos
+                WHERE user_id IN (SELECT id FROM users);
+            DROP TABLE todos;
+            ALTER TABLE todos_new RENAME TO todos;
+            CREATE INDEX idx_todos_user_id ON todos (user_id);
+            DELETE FROM sqlite_sequence WHERE name = 'todos';
+            INSERT INTO sqlite_sequence (name, seq) VALUES ('todos', {int(last_id)});
+            COMMIT;
+            """
+        )
+        after = conn.execute("SELECT COUNT(*) FROM todos").fetchone()[0]
+        if conn.execute("PRAGMA foreign_key_check").fetchall():
+            raise RuntimeError("La migración dejó filas que incumplen una clave foránea")
+        return before - after
+    finally:
+        conn.execute("PRAGMA foreign_keys = ON")
+
+
+def init_db(db_path: Path) -> None:
+    """Crea las tablas que falten, carga los datos iniciales de **cada tabla nueva** y migra el
+    esquema de una base de datos anterior.
+
+    Se decide tabla a tabla (y no por archivo) para que, al añadir un recurso, una base de datos
+    ya existente lo reciba sin perder nada de lo que tenía. Y como solo se siembra al crear la
+    tabla, si se borran todos los registros no "resucitan" al reiniciar.
+    """
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    conn = connect(db_path)
+    try:
+        existing = {
+            row["name"]
+            for row in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")
+        }
+        for table, schema, seed in RESOURCES:
+            if table not in existing:
+                conn.executescript(schema)
+                seed(conn)
+        conn.commit()
+
+        # Una tabla recién creada ya tiene el esquema actual; solo se migran las que existían.
+        if conn.execute("PRAGMA user_version").fetchone()[0] < SCHEMA_VERSION:
+            if "todos" in existing:
+                removed = _migrate_todos_add_foreign_key(conn)
+                if removed:
+                    logger.warning(
+                        "Migración de la base de datos: se eliminaron %d tareas huérfanas "
+                        "(de usuarios que ya no existían)",
+                        removed,
+                    )
+            conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_db(request: Request) -> Iterator[sqlite3.Connection]:
+    """Dependencia de FastAPI: abre una conexión por petición y la cierra al terminar.
+
+    Debe declararse con `Depends(get_db, scope="function")` para que el commit se haga antes de
+    enviar la respuesta (véase `routers/users.py`)."""
+    conn = connect(request.app.state.db_path)
+    try:
+        yield conn
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()

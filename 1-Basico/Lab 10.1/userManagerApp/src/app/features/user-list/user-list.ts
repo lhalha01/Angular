@@ -6,7 +6,7 @@ import { HighlightEven } from '../../directives/highlight-even';
 import { UserInterface } from '../../interfaces/user';
 import { FilterUsersPipe } from '../../pipes/filter-users-pipe';
 import { FullNamePipe } from '../../pipes/full-name-pipe';
-import { Notifier } from '../../services/notification';
+import { UserActions } from '../../services/user-actions';
 import { User } from '../../services/user';
 
 @Component({
@@ -17,7 +17,7 @@ import { User } from '../../services/user';
 })
 export class UserList implements OnInit {
   private readonly userService = inject(User);
-  private readonly notifier = inject(Notifier);
+  private readonly actions = inject(UserActions);
   // El pipe de filtrado se usa también desde TypeScript para poder paginar el resultado filtrado.
   private readonly filterPipe = new FilterUsersPipe();
 
@@ -69,12 +69,7 @@ export class UserList implements OnInit {
   }
 
   protected onDelete(user: UserInterface): void {
-    if (!window.confirm(`¿Eliminar a ${user.firstName} ${user.lastName}?`)) {
-      return;
-    }
-    this.userService.deleteUser(user.id).subscribe({
-      next: () => this.notifier.show(`Usuario ${user.firstName} ${user.lastName} eliminado`),
-      error: () => this.notifier.show('No se pudo eliminar el usuario', 'error'),
-    });
+    // Avisa de las tareas que se borrarán con él, confirma, borra y notifica (véase UserActions).
+    this.actions.remove(user).subscribe();
   }
 }

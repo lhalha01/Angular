@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { environment } from '../../../environments/environment';
 import { Task } from '../../core/models/task.model';
 import { ConfirmService } from '../../core/services/confirm.service';
 import { TaskService } from '../../core/services/task.service';
@@ -101,6 +102,117 @@ describe('TaskActions', () => {
       expect(toast.toasts().at(-1)?.message).toContain('No se pudo restaurar');
       expect(ids(tasks).filter((id) => id === 3).length).toBe(1); // sin duplicados
       toast.toasts().forEach((t) => toast.dismiss(t.id));
+    });
+  });
+});
+
+/** Con el backend propio los errores de la API llegan al usuario y "Deshacer" recrea la tarea allí. */
+describe('TaskActions with the own backend (persistentApi)', () => {
+  const LOCAL = 'http://localhost:8000/todos';
+  const original = { ...environment };
+  const STORED: Task[] = SEED.map((t, i) => ({ ...t, createdAt: `2026-01-01T00:00:0${i + 1}.000Z` }));
+  const fail = (status: number, body: unknown = {}) => ({ status, statusText: 'error', body });
+
+  function setup(accept = true) {
+    environment.apiUrl = 'http://localhost:8000';
+    environment.persistentApi = true;
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+    const http = TestBed.inject(HttpTestingController);
+    const tasks = TestBed.inject(TaskService);
+    http.expectOne(LOCAL).flush(STORED);
+    spyOn(TestBed.inject(ConfirmService), 'ask').and.resolveTo(accept);
+    return { http, tasks, toast: TestBed.inject(ToastService), actions: TestBed.inject(TaskActions) };
+  }
+  const messages = (toast: ToastService) => toast.toasts().map((t) => t.message);
+  const cleanUp = (toast: ToastService) => toast.toasts().forEach((t) => toast.dismiss(t.id));
+
+  afterEach(() => Object.assign(environment, original)); // no contaminar al resto de tests
+
+  describe('toggleCompleted', () => {
+    it('updates the task and avisa when the API accepts it', async () => {
+      const { actions, http, tasks, toast } = setup();
+      await actions.toggleCompleted(STORED[0]);
+      http.expectOne({ method: 'PUT', url: `${LOCAL}/1` }).flush({ ...STORED[0], completed: true });
+      expect(tasks.tasks()[0].completed).toBeTrue();
+      expect(messages(toast)[0]).toContain('marcada como completada');
+      cleanUp(toast);
+    });
+
+    it('shows the server reason and keeps the task unchanged when the API rejects it', async () => {
+      const { actions, http, tasks, toast } = setup();
+      await actions.toggleCompleted(STORED[0]);
+      http.expectOne({ method: 'PUT', url: `${LOCAL}/1` }).flush({ detail: 'El usuario 1 no existe' }, fail(422));
+      expect(tasks.tasks()[0].completed).toBeFalse();
+      expect(messages(toast)).toEqual(['No se pudo cambiar el estado de la tarea: El usuario 1 no existe.']);
+      cleanUp(toast);
+    });
+
+    it('says the backend is not reachable when there is no connection', async () => {
+      const { actions, http, toast } = setup();
+      await actions.toggleCompleted(STORED[0]);
+      http.expectOne({ method: 'PUT', url: `${LOCAL}/1` }).error(new ProgressEvent('error'));
+      expect(messages(toast)[0]).toContain('¿Está arrancado el backend?');
+      cleanUp(toast);
+    });
+  });
+
+  describe('remove', () => {
+    it('deletes in the API and offers to undo it', async () => {
+      const { actions, http, tasks, toast } = setup();
+      await actions.remove(STORED[1]);
+      http.expectOne({ method: 'DELETE', url: `${LOCAL}/2` }).flush(null, { status: 204, statusText: 'No Content' });
+      expect(tasks.tasks().map((t) => t.id)).toEqual([1, 3]);
+      expect(toast.toasts()[0].actionLabel).toBe('Deshacer');
+      cleanUp(toast);
+    });
+
+    it('keeps the task and offers no undo when the API fails', async () => {
+      const { actions, http, tasks, toast } = setup();
+      await actions.remove(STORED[1]);
+      http.expectOne({ method: 'DELETE', url: `${LOCAL}/2` }).flush({ detail: 'Tarea 2 no encontrada' }, fail(404));
+      expect(tasks.tasks().map((t) => t.id)).toEqual([1, 2, 3]);
+      expect(toast.toasts().length).toBe(1);
+      expect(toast.toasts()[0].actionLabel).toBeUndefined();
+      expect(messages(toast)[0]).toBe('No se pudo eliminar la tarea: Tarea 2 no encontrada.');
+      cleanUp(toast);
+    });
+
+    describe('undo', () => {
+      async function removeAndGetUndo() {
+        const ctx = setup();
+        await ctx.actions.remove(STORED[1]);
+        ctx.http.expectOne({ method: 'DELETE', url: `${LOCAL}/2` }).flush(null, { status: 204, statusText: 'No Content' });
+        return { ...ctx, undo: ctx.toast.toasts()[0] };
+      }
+
+      it('recreates the task in the API with its same id and date, in its original position', async () => {
+        const { http, tasks, toast, undo } = await removeAndGetUndo();
+        toast.runAction(undo);
+        const req = http.expectOne({ method: 'POST', url: LOCAL });
+        expect(req.request.body).toEqual(STORED[1]);
+        req.flush(STORED[1], { status: 201, statusText: 'Created' });
+
+        expect(tasks.tasks().map((t) => t.id)).toEqual([1, 2, 3]);
+        expect(messages(toast).at(-1)).toContain('restaurada');
+        cleanUp(toast);
+      });
+
+      it('explains that the id is already in use when the server answers 409', async () => {
+        const { http, tasks, toast, undo } = await removeAndGetUndo();
+        toast.runAction(undo);
+        http.expectOne({ method: 'POST', url: LOCAL }).flush({ detail: 'El id 2 ya está en uso' }, fail(409));
+        expect(messages(toast).at(-1)).toBe('No se pudo restaurar: el id ya está en uso');
+        expect(tasks.tasks().map((t) => t.id)).toEqual([1, 3]);
+        cleanUp(toast);
+      });
+
+      it('shows the reason for any other failure', async () => {
+        const { http, toast, undo } = await removeAndGetUndo();
+        toast.runAction(undo);
+        http.expectOne({ method: 'POST', url: LOCAL }).flush({ detail: 'El usuario 1 no existe' }, fail(422));
+        expect(messages(toast).at(-1)).toBe('No se pudo restaurar la tarea: El usuario 1 no existe.');
+        cleanUp(toast);
+      });
     });
   });
 });

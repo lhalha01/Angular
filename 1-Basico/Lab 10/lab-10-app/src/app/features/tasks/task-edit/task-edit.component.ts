@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, input, viewChild } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { describeApiError } from '../../../core/api-error';
 import { HasUnsavedChanges } from '../../../core/guards/unsaved-changes.guard';
 import { Task, TaskDraft } from '../../../core/models/task.model';
 import { TaskService } from '../../../core/services/task.service';
@@ -45,9 +46,13 @@ export class TaskEditComponent implements HasUnsavedChanges {
   }
 
   protected save(task: Task, draft: TaskDraft): void {
-    this.tasks.updateTask({ ...task, ...draft }).subscribe(() => {
-      this.toast.show(`Tarea #${task.id} actualizada`);
-      this.back(task);
+    this.tasks.updateTask({ ...task, ...draft }).subscribe({
+      next: () => {
+        this.toast.show(`Tarea #${task.id} actualizada`);
+        this.back(task);
+      },
+      // Solo ocurre con el backend propio. El formulario se queda como está para reintentar.
+      error: (error: unknown) => this.toast.show(describeApiError(error, 'No se pudo actualizar la tarea')),
     });
   }
 

@@ -31,6 +31,25 @@ npm run build
 
 Para instalar de forma reproducible y verificando los hashes del lockfile se puede usar `npm ci`.
 
+### Opcional: con el backend propio (los cambios se guardan)
+
+Por defecto la aplicación usa la API pública (JSONPlaceholder), que **no guarda** los cambios: se pierden al
+recargar. Con el backend de la carpeta [`backend/`](../../../backend/README.md) del repositorio (FastAPI +
+SQLite) sí se guardan. Necesita Python 3.11 o superior. En dos terminales:
+
+```bash
+# 1. backend (desde la carpeta backend/ del repositorio)
+.\start.cmd              # Windows;  en Linux/macOS: ./start.sh
+
+# 2. aplicación, en la configuración "local"
+cd "1-Basico/Lab 10.1/userManagerApp"
+npm run start:local      # http://localhost:4200/, hablando con http://localhost:8000
+```
+
+Sin el backend en marcha, `npm run start:local` muestra el error de carga de la lista; `npm start` no
+lo necesita para nada. La configuración `local` cambia la URL de la API y el modo de `persistentApi` (véase
+`src/environments/`).
+
 ## Rutas
 
 | Ruta               | Componente   | Descripción                                   |
@@ -71,18 +90,36 @@ estado en memoria.
   crear, editar y borrar se reflejan al instante durante la sesión (al recargar la página se pierde).
   Las llamadas `POST`/`PUT`/`DELETE` se siguen realizando, salvo para usuarios creados en local,
   que la API no conoce.
+- **Dos modos de API (`environment.persistentApi`).** Con el backend propio (configuración `local`), el
+  servicio cambia de comportamiento: el id de un alta lo asigna el servidor, **todas** las escrituras llegan a
+  la API (también las de usuarios creados en esta sesión), la edición usa **PATCH** (un PUT borraría el alias, la
+  dirección completa y demás campos que el formulario no tiene) y un error de la API llega al usuario en lugar
+  de ignorarse. En ambos modos la memoria sigue siendo lo que leen las vistas.
+- **Borrar un usuario avisa de sus tareas (backend propio).** En el backend, las tareas (`/todos`) pertenecen a un
+  usuario y se borran en cascada con él. Antes de confirmar, la aplicación pregunta cuántas tiene
+  (`GET /todos?userId=…&_limit=1`, leyendo la cabecera `X-Total-Count`, sin descargar ninguna) y lo dice: *"Ana tiene
+  20 tareas asignadas. Si lo eliminas, también se eliminarán sus 20 tareas. Esta acción no se puede deshacer."* Al
+  terminar, el aviso lo repite (`eliminado junto con sus 20 tareas`). Un usuario sin tareas se confirma como siempre.
+  Si no se puede comprobar el número de tareas, **no se pregunta ni se borra nada** (el usuario confirmaría sin
+  saber qué pierde) y se explica en un aviso. Con la API pública no hay cascada, así que no se consulta nada y todo
+  funciona como antes. Lista y detalle comparten esta lógica en `services/user-actions.ts`.
 - **Paginación.** Se pagina sobre el estado en memoria (5 usuarios por página), no con `_page`/`_limit`
   de la API. Con altas y bajas solo locales, las páginas del servidor dejarían de coincidir con lo
   que se muestra; paginar la copia en memoria mantiene el filtro, la paginación y los cambios coherentes.
-  Es un compromiso asumido entre dos requisitos que chocan.
+  Es un compromiso asumido entre dos requisitos que chocan. El backend propio sí admite `_page`/`_limit`
+  y `q`, pero la aplicación aún no los usa: seguiría paginando en memoria en los dos modos.
 - **Dónde se procesa el filtro.** `FilterUsersPipe` se instancia también desde el componente para
   poder paginar el resultado filtrado.
 
 ## Tests
 
-22 tests unitarios (servicio con `HttpTestingController`, pipes y componente de lista):
+49 tests unitarios (servicios con `HttpTestingController`, pipes y componente de lista):
 normalización de datos, caché en memoria, alta / edición / borrado, filtro, paginación,
-resaltado de ids pares y confirmación de borrado.
+resaltado de ids pares y confirmación de borrado. Siete de ellos cubren el modo del backend propio
+(`persistentApi`): id asignado por el servidor, PATCH en lugar de PUT, escrituras de usuarios creados
+y propagación de errores de la API. Otros 20 cubren el borrado con aviso de tareas (`UserActions` y
+`User.countTasks`): textos en singular y plural, cancelar, aceptar, usuario sin tareas, fallo al consultar las
+tareas, cabecera ausente o inválida, fallo al borrar y API pública sin consultas.
 
 ## Integridad de paquetes y vulnerabilidades (2026-11-10)
 

@@ -1,0 +1,5 @@
+# Herramientas para probar y auditar el backend (no hacen falta para ejecutarlo).
+-r requirements.txt
+pytest==9.2.0
+httpx2==2.16.0
+pip-audit==2.10.1

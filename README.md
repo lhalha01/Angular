@@ -9,7 +9,8 @@ carpeta `Lab NN`, con su enunciado (`Lab NN.md`) y, cuando corresponde, el proye
 .
 ├── 1-Basico/          Lab 01 a Lab 09, más las prácticas finales Lab 10 y Lab 10.1
 ├── 2-Intermedio/      Lab 11 a Lab 19, más las prácticas finales Lab 20 y Lab 20.1
-└── 3-Avanzado/        Lab 21 a Lab 28, más la práctica final Lab 29
+├── 3-Avanzado/        Lab 21 a Lab 28, más la práctica final Lab 29
+└── backend/           APIs locales (FastAPI + SQLite) que sustituyen a las públicas y guardan los cambios
 ```
 
 | Nivel | Carpeta | Laboratorios | Práctica final | Estado |
@@ -59,11 +60,24 @@ Estado actual por nivel:
 
 No hay `package.json` en la raíz del repositorio.
 
+## Backend (opcional)
+
+Las prácticas usan por defecto APIs públicas de mentira (JSONPlaceholder), que no guardan los cambios.
+La carpeta [`backend/`](backend/README.md) ofrece APIs locales con **FastAPI y SQLite** que sí los guardan, y
+se arranca con un solo comando (`.\start.cmd` en Windows, `./start.sh` en Linux/macOS). Es opcional: nada
+del resto del repositorio lo necesita para funcionar. Guía paso a paso: [`backend/GUIA.md`](backend/GUIA.md).
+
+| Práctica | Usa el backend | Cómo |
+| --- | --- | --- |
+| Lab 10.1 | Sí (recurso `/users`) | `npm run start:local` |
+| Lab 10 | Sí (recursos `/todos` y `/users`) | `npm run start:local` |
+
 ## Requisitos
 
 - **Node.js** 20.19 o superior y menor que 22 (requisito del curso).
 - **npm** 10 o superior.
 - **Chrome o Chromium**, solo para ejecutar los tests unitarios.
+- **Python 3.11 o superior**, solo si se quiere usar el backend opcional.
 - **Angular 20.3** (CLI 20.3.x), la versión fijada por el curso.
 
 ## Cómo ejecutar un proyecto

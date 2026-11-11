@@ -1,0 +1,4 @@
+# Los scripts de arranque deben conservar sus finales de línea en cualquier sistema:
+# un start.sh con CRLF falla en Linux/macOS, y un start.cmd con LF puede fallar en Windows.
+*.sh  text eol=lf
+*.cmd text eol=crlf

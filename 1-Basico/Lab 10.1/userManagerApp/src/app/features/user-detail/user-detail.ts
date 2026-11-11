@@ -3,8 +3,8 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { UserInterface } from '../../interfaces/user';
 import { FullNamePipe } from '../../pipes/full-name-pipe';
-import { Notifier } from '../../services/notification';
 import { User } from '../../services/user';
+import { UserActions } from '../../services/user-actions';
 
 @Component({
   selector: 'app-user-detail',
@@ -57,7 +57,7 @@ export class UserDetail implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly userService = inject(User);
-  private readonly notifier = inject(Notifier);
+  private readonly actions = inject(UserActions);
 
   protected readonly loading = signal(true);
   protected readonly user = signal<UserInterface | undefined>(undefined);
@@ -72,15 +72,11 @@ export class UserDetail implements OnInit {
   }
 
   protected onDelete(user: UserInterface): void {
-    if (!window.confirm(`¿Eliminar a ${user.firstName} ${user.lastName}?`)) {
-      return;
-    }
-    this.userService.deleteUser(user.id).subscribe({
-      next: () => {
-        this.notifier.show(`Usuario ${user.firstName} ${user.lastName} eliminado`);
+    // Avisa de las tareas que se borrarán con él, confirma, borra y notifica (véase UserActions).
+    this.actions.remove(user).subscribe((deleted) => {
+      if (deleted) {
         this.router.navigate(['/users']);
-      },
-      error: () => this.notifier.show('No se pudo eliminar el usuario', 'error'),
+      }
     });
   }
 }

@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+# Bases de datos locales: se generan solas al arrancar
+data/
