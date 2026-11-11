@@ -1,9 +1,11 @@
 import { registerLocaleData } from '@angular/common';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import localeEs from '@angular/common/locales/es';
 import { ApplicationConfig, LOCALE_ID, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 
+import { authInterceptor } from '@core/interceptors/auth.interceptor';
+import { errorInterceptor } from '@core/interceptors/error.interceptor';
 import { routes } from './app.routes';
 
 // Fechas y pipes en español (p. ej. date:'fullDate').
@@ -14,7 +16,8 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: true }),
     // withComponentInputBinding: el parámetro :id llega como input() del componente.
     provideRouter(routes, withComponentInputBinding()),
-    provideHttpClient(),
+    // El orden importa: primero se añade el token y, a la vuelta, el interceptor de errores ve el fallo ya completo.
+    provideHttpClient(withFetch(), withInterceptors([authInterceptor, errorInterceptor])),
     { provide: LOCALE_ID, useValue: 'es' },
   ],
 };

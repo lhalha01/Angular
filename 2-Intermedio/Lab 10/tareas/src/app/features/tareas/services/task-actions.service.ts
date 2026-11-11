@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { describeApiError } from '@core/api-error';
+import { errorYaNotificado } from '@core/http/error-notificado';
 import { Task } from '../models/task.model';
 import { ConfirmService } from '@core/services/confirm.service';
 import { TaskService } from './task.service';
@@ -24,10 +24,9 @@ export class TaskActions {
       confirmLabel: `Marcar como ${target}`,
     });
     if (!accepted) return;
-    this.tasks.updateTask({ ...task, completed: !task.completed }).subscribe({
+    this.tasks.updateTask({ ...task, completed: !task.completed }, 'No se pudo cambiar el estado de la tarea').subscribe({
       next: () => this.toast.show(`Tarea #${task.id} marcada como ${target}`),
-      // Los errores de la API solo llegan con el backend propio (la pública los ignora).
-      error: (error: unknown) => this.toast.show(describeApiError(error, 'No se pudo cambiar el estado de la tarea')),
+      error: errorYaNotificado, // lo avisa el interceptor de errores
     });
   }
 
@@ -49,7 +48,7 @@ export class TaskActions {
           duration: 8000,
           action: () => this.undo(task, index),
         }),
-      error: (error: unknown) => this.toast.show(describeApiError(error, 'No se pudo eliminar la tarea')),
+      error: errorYaNotificado,
     });
   }
 
@@ -58,7 +57,7 @@ export class TaskActions {
     this.tasks.restoreTask(task, index).subscribe({
       next: (restored) =>
         this.toast.show(restored ? `Tarea #${task.id} restaurada` : 'No se pudo restaurar: el id ya está en uso'),
-      error: (error: unknown) => this.toast.show(describeApiError(error, 'No se pudo restaurar la tarea')),
+      error: errorYaNotificado,
     });
   }
 }

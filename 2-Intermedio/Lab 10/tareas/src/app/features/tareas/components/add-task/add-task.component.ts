@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, viewChild } from '@angular/core';
 import { Router } from '@angular/router';
-import { describeApiError } from '@core/api-error';
+import { errorYaNotificado } from '@core/http/error-notificado';
 import { HasUnsavedChanges } from '@core/guards/unsaved-changes.guard';
 import { TaskDraft } from '../../models/task.model';
 import { TaskService } from '../../services/task.service';
@@ -36,9 +36,8 @@ export class AddTaskComponent implements HasUnsavedChanges {
         this.toast.show(`Tarea #${task.id} creada`);
         this.back();
       },
-      // Solo ocurre con el backend propio (la API pública no devuelve errores). El formulario se
-      // queda como está para que se pueda volver a intentar.
-      error: (error: unknown) => this.toast.show(describeApiError(error, 'No se pudo crear la tarea')),
+      // El aviso del error lo muestra el interceptor; el formulario se queda como está para poder reintentar.
+      error: errorYaNotificado,
     });
   }
 

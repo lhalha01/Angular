@@ -1,4 +1,6 @@
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { authInterceptor } from '@core/interceptors/auth.interceptor';
+import { errorInterceptor } from '@core/interceptors/error.interceptor';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { environment } from '../../../../environments/environment';
@@ -116,7 +118,7 @@ describe('TaskActions with the own backend (persistentApi)', () => {
   function setup(accept = true) {
     environment.apiUrl = 'http://localhost:8000';
     environment.persistentApi = true;
-    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+    TestBed.configureTestingModule({ providers: [provideHttpClient(withInterceptors([authInterceptor, errorInterceptor])), provideHttpClientTesting()] });
     const http = TestBed.inject(HttpTestingController);
     const tasks = TestBed.inject(TaskService);
     http.expectOne(LOCAL).flush(STORED);

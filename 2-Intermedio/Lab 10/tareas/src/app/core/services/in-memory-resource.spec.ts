@@ -1,6 +1,6 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { TestBed } from '@angular/core/testing';
+import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { environment } from '../../../environments/environment';
 import { InMemoryResource } from './in-memory-resource';
 
@@ -19,9 +19,9 @@ const SEED: Item[] = [
 /** Servicio mínimo que expone las operaciones protegidas de la base. */
 class FakeResource extends InMemoryResource<Item> {
   protected readonly apiUrl = URL;
-  protected override isItem(value: unknown): value is Item {
+  protected override fromApi(value: unknown): Item | null {
     const v = value as Partial<Item> | null;
-    return typeof v?.id === 'number' && typeof v.name === 'string';
+    return typeof v?.id === 'number' && typeof v.name === 'string' ? (v as Item) : null;
   }
   constructor() {
     super();
@@ -86,7 +86,12 @@ describe('InMemoryResource', () => {
       expect(resource.status()).toBe('error');
     });
 
-    it('reports an error and can be reloaded', () => {
+    it('reports an error (once the retries are exhausted) and can be reloaded', fakeAsync(() => {
+      http.expectOne(URL).error(new ProgressEvent('error'));
+      expect(resource.status()).toBe('loading'); // aún reintenta
+      tick(1000);
+      http.expectOne(URL).error(new ProgressEvent('error'));
+      tick(2000);
       http.expectOne(URL).error(new ProgressEvent('error'));
       expect(resource.status()).toBe('error');
 
@@ -94,7 +99,7 @@ describe('InMemoryResource', () => {
       expect(resource.status()).toBe('loading');
       load();
       expect(resource.status()).toBe('ready');
-    });
+    }));
   });
 
   describe('getById', () => {

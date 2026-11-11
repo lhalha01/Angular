@@ -16,7 +16,7 @@ carpeta `Lab NN`, con su enunciado (`Lab NN.md`) y, cuando corresponde, el proye
 | Nivel | Carpeta | Laboratorios | Práctica final | Estado |
 | --- | --- | --- | --- | --- |
 | Básico | `1-Basico` | Lab 01 a Lab 09 | Lab 10 y Lab 10.1 | Completado |
-| Intermedio | `2-Intermedio` | Lab 11 a Lab 19 | Lab 20 y Lab 20.1 | En curso: Lab 11.1, 11.2, 12.1, 12.2, 13.1 y 13.2 hechos |
+| Intermedio | `2-Intermedio` | Lab 11 a Lab 19 | Lab 20 y Lab 20.1 | En curso: Lab 11.1, 11.2, 12.1, 12.2, 13.1, 13.2, 14.1 y 14.2 hechos |
 | Avanzado | `3-Avanzado` | Lab 21 a Lab 28 | Lab 29 | Pendiente (enunciados por añadir) |
 
 ## Proyectos del nivel Básico
@@ -52,6 +52,8 @@ dividen en dos carpetas, cada una con su propio enunciado extraído de él:
 | Lab 12.2 | `2-Intermedio/Lab 12/Lab 12.2` | Reestructurar la aplicación de tareas y usuarios por features | Hecho (versión adaptada) sobre la copia del Lab 10 de `2-Intermedio/Lab 10/tareas`: features `tareas` y `usuarios`, barrels y alias (véase el README de la app) |
 | Lab 13.1 | `2-Intermedio/Lab 13/Lab 13.1/talenthub` | TalentHub: router profesional (rutas lazy por feature, `authGuard`, resolver del perfil, guard de cambios pendientes) | Hecho; usa el backend local (`/users`) |
 | Lab 13.2 | `2-Intermedio/Lab 13/Lab 13.2` | Navegación segura de la aplicación de tareas (login, `authGuard`, rutas lazy) | Hecho sobre la copia del Lab 10 de `2-Intermedio/Lab 10/tareas` (véase su README) |
+| Lab 14.1 | `2-Intermedio/Lab 14/Lab 14.1/talenthub` | TalentHub: HTTP y capa de datos (`EmpleadoService`, `ProyectoService`, interceptores, reintentos y avisos de error) | Hecho; usa el backend local (`/users` y `/todos`) |
+| Lab 14.2 | `2-Intermedio/Lab 14/Lab 14.2` | Interceptores, DTO y mapper en la aplicación de tareas | Hecho sobre la copia del Lab 10 de `2-Intermedio/Lab 10/tareas` (dominio en inglés; véase su README) |
 
 ## Estructura de dependencias
 

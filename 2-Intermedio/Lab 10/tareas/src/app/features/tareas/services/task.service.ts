@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { Task, TaskDraft, isTask } from '../models/task.model';
+import { aTaskDto, leerTask } from '../mappers/task.mapper';
+import { Task, TaskDraft } from '../models/task.model';
 import { InMemoryResource } from '@core/services/in-memory-resource';
 
 /**
@@ -13,7 +14,17 @@ import { InMemoryResource } from '@core/services/in-memory-resource';
 export class TaskService extends InMemoryResource<Task> {
   protected readonly apiUrl = `${environment.apiUrl}/todos`;
 
-  protected override isItem = isTask;
+  protected override readonly etiqueta = 'las tareas';
+
+  /** API → dominio: el DTO no sale de este servicio (lo traduce el mapper). */
+  protected override fromApi(json: unknown): Task | null {
+    return leerTask(json);
+  }
+
+  /** Dominio → API. */
+  protected override toApi(task: Task, conId: boolean): unknown {
+    return aTaskDto(task, conId);
+  }
 
   readonly tasks = this.items;
 
@@ -31,15 +42,20 @@ export class TaskService extends InMemoryResource<Task> {
    * 201) y se genera uno local; con el backend propio el id lo asigna el servidor.
    */
   addTask(draft: TaskDraft): Observable<Task> {
-    return this.addItem({ ...draft, id: this.nextId(), createdAt: new Date().toISOString() }, 'start');
+    return this.addItem(
+      { ...draft, id: this.nextId(), createdAt: new Date().toISOString() },
+      'start',
+      'No se pudo crear la tarea',
+    );
   }
 
-  updateTask(task: Task): Observable<Task> {
-    return this.updateItem(task);
+  /** `operacion` es lo que se intentaba, para el aviso de error (p. ej. «No se pudo cambiar el estado de la tarea»). */
+  updateTask(task: Task, operacion = 'No se pudo actualizar la tarea'): Observable<Task> {
+    return this.updateItem(task, operacion);
   }
 
   deleteTask(id: number): Observable<void> {
-    return this.deleteItem(id);
+    return this.deleteItem(id, 'No se pudo eliminar la tarea');
   }
 
   /**
@@ -47,7 +63,7 @@ export class TaskService extends InMemoryResource<Task> {
    * ya está en uso.
    */
   restoreTask(task: Task, index: number): Observable<boolean> {
-    return this.restoreItem(task, index);
+    return this.restoreItem(task, index, 'No se pudo restaurar la tarea');
   }
 
   /**

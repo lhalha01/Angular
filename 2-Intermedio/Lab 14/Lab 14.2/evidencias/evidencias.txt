@@ -1,0 +1,17 @@
+Lab 14.2 Gestor de Tareas - Network y notificacion de error (recorridos reales en Chrome contra el build de produccion)
+
+Con el backend en marcha:
+  OPTIONS  /todos           200  Authorization: -
+  OPTIONS  /users           200  Authorization: -
+  GET      /todos           200  Authorization: Bearer 460f5536-2edb-466f-877e-1589e6374722
+  GET      /users           200  Authorization: Bearer 460f5536-2edb-466f-877e-1589e6374722
+  GET      /todos           200  Authorization: Bearer 460f5536-2edb-466f-877e-1589e6374722
+  GET      /todos/99999     404  Authorization: Bearer 460f5536-2edb-466f-877e-1589e6374722
+  OPTIONS  /todos/99999     200  Authorization: -
+  GET      /users           200  Authorization: Bearer 460f5536-2edb-466f-877e-1589e6374722
+  Mostrando 1–10 de 200 tareas; /todos/99999 -> "No se encontro la tarea", avisos en pantalla: 0
+
+Con el backend parado:
+  GET /todos: 3 intentos a los 1020, 2037, 4053 ms
+  Aviso en pantalla: No se pudieron cargar las tareas: no se pudo conectar con el servidor. ¿Está arrancado el backend?
+  Aviso en pantalla: No se pudieron cargar los usuarios: no se pudo conectar con el servidor. ¿Está arrancado el backend?

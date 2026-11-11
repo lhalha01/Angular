@@ -1,0 +1,15 @@
+Lab 14.1 TalentHub - Network: cabecera Authorization (recorrido real en Chrome contra el build de produccion)
+
+OPTIONS  /users                 200  Authorization: -
+GET      /users                 200  Authorization: Bearer f8eb3544-e0a5-405c-86e3-ed568cc54a45
+GET      /users/1               200  Authorization: Bearer f8eb3544-e0a5-405c-86e3-ed568cc54a45
+OPTIONS  /users/1               200  Authorization: -
+GET      /users/999             404  Authorization: Bearer f8eb3544-e0a5-405c-86e3-ed568cc54a45
+OPTIONS  /users/999             200  Authorization: -
+GET      /todos?_limit=20       200  Authorization: Bearer f8eb3544-e0a5-405c-86e3-ed568cc54a45
+OPTIONS  /todos?_limit=20       200  Authorization: -
+
+Directorio: 10 empleados (Leanne Graham, Ervin Howell, Clementine Bauch...)
+/empleados/1 -> Leanne Graham
+/empleados/999 -> "Empleado no encontrado" (avisos en pantalla: 0; el 404 devuelve null sin romper)
+Proyectos (GET /todos?_limit=20): 20 en la lista

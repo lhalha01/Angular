@@ -81,7 +81,8 @@ src/app
 ├── core/                       infraestructura sin lógica de negocio; no depende de features
 │   ├── guards/                 auth.guard (canMatch: sin sesión → /login?returnUrl=…), unsaved-changes.guard (canDeactivate)
 │   ├── login/                  pantalla de acceso (simulada; token opaco en sessionStorage)
-│   ├── interceptors/           (vacía: la rellena el Lab 14)
+│   ├── interceptors/           auth.interceptor (Authorization: Bearer), error.interceptor (avisos centralizados), http-context (tokens)
+│   ├── http/                   reintentar (2 reintentos, 1 s y 2 s) y error-notificado
 │   ├── layout/navbar/          cabecera: marca, título del nivel y tema; con sesión, enlaces y «Cerrar sesión»
 │   ├── services/               auth (sesión simulada), in-memory-resource (base común del estado en memoria), ignore-server-outcome,
 │   │                           storage (localStorage que nunca lanza), theme, toast, confirm
@@ -94,6 +95,7 @@ src/app
 │   ├── home/                   index.ts
 │   ├── tareas/                 index.ts + tareas.routes.ts (rutas /tasks y /add-task, cargadas con loadChildren)
 │   │   ├── models/             task.model.ts (Task, NewTask…, isTask)
+│   │   ├── mappers/            task.dto.ts, task.mapper.ts (DTO de la API ↔ dominio `Task`)
 │   │   ├── services/           task.service.ts, task-actions.service.ts (confirmar + modificar + avisar + Deshacer)
 │   │   ├── components/         task-list (pantalla; task-query.ts y task-list-params.ts son funciones puras),
 │   │   │                       task-card, task-toolbar, task-form, task-detail, task-edit, add-task
@@ -121,7 +123,7 @@ Alias de rutas (`tsconfig.json`): `@core/*`, `@shared/*` y `@features/*`. La arq
 - **Dos modos de API (`environment.persistentApi`)**, resueltos solo en `InMemoryResource` para que el resto de la
   aplicación no se entere. Con el backend propio (configuración `local`): el id y la fecha de creación los asigna el
   servidor (no se envía el id del cliente) y se guarda lo que responde; **los errores de la API dejan de ignorarse** y
-  llegan al usuario con `describeApiError` (por ejemplo, "no se pudo conectar con el servidor. ¿Está arrancado el
+  los avisa el interceptor de errores con el texto de la operación (`describeApiError`; por ejemplo, "no se pudo conectar con el servidor. ¿Está arrancado el
   backend?"); y **"Deshacer"** recrea la tarea en el servidor con su mismo id y su fecha (`POST` con `id`), y avisa
   si el servidor responde 409 porque el id está ocupado. Por eso `restoreTask` devuelve un `Observable<boolean>` en
   lugar de un booleano. La API pública sigue funcionando exactamente como antes.
@@ -130,7 +132,7 @@ Alias de rutas (`tsconfig.json`): `@core/*`, `@shared/*` y `@features/*`. La arq
 - **Ciclo de vida**: `TaskFormComponent.ngOnChanges` reinicia el formulario con una copia cada vez que el padre pasa
   un valor inicial; `TaskListComponent.ngOnInit` lee los filtros de la URL; `ToastService.ngOnDestroy` cancela los
   temporizadores pendientes. El resto del estado reactivo usa signals y `effect()`, que se limpian solos.
-- **Pruebas**: `npm test` ejecuta 252 tests (cobertura ≈99 % de líneas: 99,49 %), incluida una prueba de integración
+- **Pruebas**: `npm test` ejecuta 290 tests (cobertura ≈99 % de líneas: 99,55 %), incluida una prueba de integración
   de las rutas reales. 40 de ellos cubren el modo del backend propio: ids y fechas del servidor, errores que
   llegan al usuario, "Deshacer" contra la API (incluido el 409) y los formularios de crear y editar.
 - **UserService** (servicio mock de `Servicios_mock.md`): listar, obtener por id, crear (POST) y eliminar (DELETE)
@@ -174,6 +176,7 @@ Alias de rutas (`tsconfig.json`): `@core/*`, `@shared/*` y `@features/*`. La arq
 | Type guards `isTask` e `isUser` aplicados a las respuestas HTTP: los elementos con forma inválida se descartan y una respuesta que no es una lista se trata como error de carga | 11.2 |
 | Arquitectura por features: `core/`, `shared/` y `features/{home,tareas,usuarios}` con barrels, alias `@core`, `@shared` y `@features`, rutas por feature (`loadChildren`), `NavbarComponent` en `core/layout`, regla de ESLint y `npm run check:architecture` | 12.2 |
 | Router profesional: pantalla de login, `AuthService` (token en `sessionStorage`), `authGuard` como `canMatch` y cabecera que reacciona a la sesión; el resolver y el guard de cambios sin guardar ya existían | 13.2 |
+| Capa HTTP: interceptores de autenticación y de errores (`withFetch`), reintentos con espera en la carga, DTO + mapper de tareas (`TaskDto`, `mapearTask`), contexto de cada petición (operación, errores esperados) y avisos de error centralizados; los componentes ya no gestionan los errores HTTP | 14.2 |
 
 ### Diferencias del Lab 12.2 con su enunciado
 
@@ -193,6 +196,20 @@ Alias de rutas (`tsconfig.json`): `@core/*`, `@shared/*` y `@features/*`. La arq
 - **`AuthService.autenticado` (señal)** además de `estaAutenticado()`: la cabecera necesita reaccionar sin recargar; `estaAutenticado()` sigue leyendo `sessionStorage`, que es la fuente de verdad de los guards.
 - **El inicio (`/`) también exige sesión**, y la cabecera sin sesión solo muestra la marca y el tema.
 - **La API:** el recorrido de las evidencias usa el backend local (`/todos` y `/users`); los tests no necesitan red.
+
+### Diferencias del Lab 14.2 con su enunciado
+
+- **API local en lugar de JSONPlaceholder.** La lista, el detalle y las escrituras usan `/todos` y `/users` del backend propio (la regla del nivel); con `npm run start:public` sigue funcionando la API pública. El enunciado fija `…/todos?_limit=20`; aquí se cargan las 200 tareas del backend, como en los demás Labs de la app.
+- **El dominio sigue en inglés (`Task`)**, a petición tuya: el DTO y el mapper traducen entre la API y `Task` (`TaskDto`, `mapearTask`, `aTaskDto`, `leerTask`), pero no se renombra `Task` a `Tarea` ni se añade `prioridad` (la API no la tiene; se plantearía en el backend cuando el Lab 15 o 16 la necesiten).
+- **Los DTO no salen del servicio**: `InMemoryResource` define dos ganchos, `fromApi` (valida la forma y traduce; lo que no encaja se descarta) y `toApi`; `TaskService` los implementa con el mapper. La regla `no-restricted-imports` impide importar un DTO fuera de un `*.mapper.ts`.
+- **Los avisos de error los da el interceptor, no los componentes.** Para no perder los textos concretos («No se pudo eliminar la tarea: …»), cada petición declara en su `HttpContext` qué se intentaba (`OPERACION`), qué estados maneja el llamante (`ERRORES_ESPERADOS`: el 404 de `getById`, el 409 de «Deshacer») y si debe avisar (`NOTIFICAR_ERRORES`: no, con la API de mentira, que ignora sus fallos). Los componentes solo pasan `errorYaNotificado` como manejador de `error`. Si el servidor da un motivo (validación, 404 con detalle…), se muestra.
+- **El 404 de una tarea inexistente no avisa**: «no existe» es una respuesta esperada y la pantalla ya dice «No se encontró la tarea». Cualquier otro error al consultarla sí se avisa.
+- **Reintentos solo en la carga** (`reload`), con 2 reintentos (1 s y 2 s) si el fallo es pasajero (sin conexión o 5xx). Las escrituras no se reintentan: repetir un POST podría crear duplicados. Mientras reintenta, la lista sigue en «cargando».
+- **Un solo aviso por recurso aunque haya reintentos.** Cada reintento pasa de nuevo por el interceptor; no se repite un aviso que sigue visible. Con una limitación: el aviso sale en el **primer** fallo (el interceptor no sabe si habrá reintentos), así que si el reintento acierta se habrá mostrado un aviso innecesario.
+- **El 401 cierra la sesión y lleva al login** recordando la pantalla (`returnUrl`). El token es el opaco del Lab 13.2 y solo se envía a nuestra API.
+- **`withFetch()`** como pide el enunciado; no cambia nada visible.
+
+Evidencias del Lab 14.2 en [`../../Lab 14/Lab 14.2/evidencias/`](../../Lab%2014/Lab%2014.2/evidencias/) (Network con la cabecera `Authorization` y la notificación de error en pantalla).
 
 Evidencias del Lab 13.2 en [`../../Lab 13/Lab 13.2/evidencias/`](../../Lab%2013/Lab%2013.2/evidencias/) (Network con los chunks lazy, guards en acción y resolver).
 

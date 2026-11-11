@@ -35,6 +35,15 @@ describe('AuthService', () => {
     expect(auth.autenticado()).toBeTrue();
   });
 
+  it('getToken devuelve el token de la sesión, o null sin ella', () => {
+    const auth = TestBed.inject(AuthService);
+    expect(auth.getToken()).toBeNull();
+    auth.login('abc-123');
+    expect(auth.getToken()).toBe('abc-123');
+    auth.logout();
+    expect(auth.getToken()).toBeNull();
+  });
+
   it('la sesión vive en sessionStorage, no en localStorage', () => {
     TestBed.inject(AuthService).login('abc-123');
     expect(localStorage.getItem('auth_token')).toBeNull();

@@ -13,7 +13,11 @@ import { InMemoryResource } from '@core/services/in-memory-resource';
 export class UserService extends InMemoryResource<User> {
   protected readonly apiUrl = `${environment.apiUrl}/users`;
 
-  protected override isItem = isUser;
+  protected override readonly etiqueta = 'los usuarios';
+
+  protected override fromApi(json: unknown): User | null {
+    return isUser(json) ? json : null;
+  }
 
   readonly users = this.items;
 
@@ -35,7 +39,7 @@ export class UserService extends InMemoryResource<User> {
   }
 
   addUser(draft: UserDraft): Observable<User> {
-    return this.addItem({ ...draft, id: this.nextId() }, 'end');
+    return this.addItem({ ...draft, id: this.nextId() }, 'end', 'No se pudo crear el usuario');
   }
 
   /**
@@ -44,6 +48,6 @@ export class UserService extends InMemoryResource<User> {
    * añade esa opción, habrá que llamar a `TaskService.reload()` después.
    */
   deleteUser(id: number): Observable<void> {
-    return this.deleteItem(id);
+    return this.deleteItem(id, 'No se pudo eliminar el usuario');
   }
 }

@@ -21,6 +21,11 @@ export class AuthService {
     return sessionStorage.getItem(this.TOKEN_KEY) !== null;
   }
 
+  /** El token de la sesión (lo lee el interceptor de autenticación), o `null` si no hay sesión. */
+  getToken(): string | null {
+    return sessionStorage.getItem(this.TOKEN_KEY);
+  }
+
   login(token: string): void {
     sessionStorage.setItem(this.TOKEN_KEY, token);
     this._autenticado.set(true);
