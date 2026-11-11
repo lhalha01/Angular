@@ -2,9 +2,9 @@
   "name": "angular-labs-intermedio",
   "version": "1.0.0",
   "private": true,
-  "description": "Labs 11-19 de Angular (nivel Intermedio): comparten un unico node_modules mediante npm workspaces. Las practicas finales Lab 20 y Lab 20.1 son proyectos independientes.",
+  "description": "Labs 10-19 de Angular (el Lab 10 es la copia de trabajo de la app de tareas) (nivel Intermedio): comparten un unico node_modules mediante npm workspaces. Las practicas finales Lab 20 y Lab 20.1 son proyectos independientes.",
   "workspaces": [
-    "Lab 1[1-9]/Lab 1[1-9].*/*",
-    "Lab 1[1-9]/*"
+    "Lab 1[0-9]/Lab 1[0-9].*/*",
+    "Lab 1[0-9]/*"
   ]
 }

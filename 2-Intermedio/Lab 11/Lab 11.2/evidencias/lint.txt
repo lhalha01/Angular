@@ -1,0 +1,7 @@
+$ npx ng lint
+
+Linting "tareas"...
+
+All files pass linting.
+
+(codigo de salida: 0)

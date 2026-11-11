@@ -1,0 +1,35 @@
+import { isTask } from './task.model';
+import { isUser } from './user.model';
+
+describe('type guards', () => {
+  describe('isTask', () => {
+    const valid = { id: 1, userId: 2, title: 'Comprar pan', completed: false };
+
+    it('accepts a task, with or without the local createdAt field', () => {
+      expect(isTask(valid)).toBeTrue();
+      expect(isTask({ ...valid, createdAt: '2026-01-01T00:00:00.000Z' })).toBeTrue();
+    });
+
+    it('rejects values that are not objects', () => {
+      for (const value of [null, undefined, 5, 'texto', []]) expect(isTask(value)).toBeFalse();
+    });
+
+    it('rejects objects with missing or mistyped fields', () => {
+      expect(isTask({ ...valid, id: '1' })).toBeFalse();
+      expect(isTask({ ...valid, completed: 'no' })).toBeFalse();
+      expect(isTask({ ...valid, createdAt: 5 })).toBeFalse();
+      expect(isTask({ id: 1, title: 'sin userId', completed: true })).toBeFalse();
+    });
+  });
+
+  describe('isUser', () => {
+    const valid = { id: 1, name: 'Ana', username: 'ana', email: 'ana@example.com' };
+
+    it('accepts a user and rejects invalid shapes', () => {
+      expect(isUser(valid)).toBeTrue();
+      expect(isUser({ ...valid, email: undefined })).toBeFalse();
+      expect(isUser(null)).toBeFalse();
+      expect(isUser({ id: '1' })).toBeFalse();
+    });
+  });
+});

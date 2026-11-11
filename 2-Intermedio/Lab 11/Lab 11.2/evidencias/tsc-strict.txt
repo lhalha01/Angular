@@ -1,0 +1,8 @@
+$ npx tsc --noEmit --strict -p tsconfig.app.json
+(codigo de salida: 0)
+
+$ npx tsc --noEmit --strict -p tsconfig.spec.json
+(codigo de salida: 0)
+
+$ grep -rnE "\bany\b|as any" src (solo tipos)
+ocurrencias de any: 0

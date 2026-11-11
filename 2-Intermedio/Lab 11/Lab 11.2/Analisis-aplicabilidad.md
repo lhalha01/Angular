@@ -12,8 +12,7 @@ premisas no se cumplen: parte de una aplicación con `any` por todas partes, con
 que no existen.
 
 Sí es posible una **versión adaptada** que tendría trabajo real: la auditoría de la Fase 1, ejecutada de verdad,
-encontró hallazgos genuinos (véase el apartado 2). No se ha realizado el refactor; la decisión sobre el alcance
-está pendiente (apartado 4).
+encontró hallazgos genuinos (véase el apartado 2). La versión adaptada se ha realizado en `2-Intermedio/Lab 10/tareas/` (véase «Resultado»).
 
 ## 1. Lo que asume el enunciado frente a lo que hay
 
@@ -69,7 +68,9 @@ cambios visibles" ✔ si no se toca.
 | **B. Traducir el dominio al español** | `Tarea`/`Usuario` con DTOs y mappers desde la API, como en el Lab 11.1. La API no tiene `prioridad` ni `descripcion`: habría que inventarlos | Alto (toca casi todos los archivos y tests) |
 | **C. Solo este informe** | Dejar constancia de que el enunciado no aplica y de qué se comprobó | Ninguno |
 
-**Pendiente:** elegir A, B o C. Conviene además confirmar si el Lab 11.2 se evalúa sobre la aplicación de partida de
+**Decisión (2026-11-11): se realiza la opción A**, sobre la copia del Lab 10 de `2-Intermedio/Lab 10/tareas/` (el Lab 10 de `1-Basico` no se toca). Ver el apartado «Resultado» al final. La opción B (dominio en español con DTOs y mappers) queda para el Lab 14, donde el enunciado introduce los DTOs.
+
+**Nota:** el criterio sobre la aplicación de partida de cada alumno sigue en pie: Conviene además confirmar si el Lab 11.2 se evalúa sobre la aplicación de partida de
 cada alumno (con `any`), en cuyo caso el enunciado sí tendría sentido para ellos pero no para nuestra aplicación, que
 ya estaba tipada.
 
@@ -80,3 +81,24 @@ ya estaba tipada.
   plantillas y de accesibilidad, con `no-explicit-any` como error). Los proyectos originales no se tocaron.
 - **Tipos:** `npx tsc --noEmit --strict -p tsconfig.app.json` en cada proyecto.
 - **Llamadas HTTP, decoradores y fuentes externas:** búsquedas con `grep` en `src/app` (sin los `*.spec.ts`).
+
+## Resultado (opción A realizada)
+
+Sobre `2-Intermedio/Lab 10/tareas/`, con evidencias en `Lab 11.2/evidencias/` (`ng-lint.png`, `app-funcionando.png`, `lint.txt`, `tsc-strict.txt`), que son las capturas del entregable:
+
+| Criterio del enunciado | Antes | Después |
+| --- | --- | --- |
+| `ng lint` | 2 errores (accesibilidad en `confirm-dialog`) | **0 errores** (`no-explicit-any` activo como error) |
+| `tsc --noEmit --strict` (app y specs) | sin errores | sin errores |
+| `any` / `as any` | 0 | 0 |
+| Modelos en `src/app/models/` | en `core/models/` | movidos, con `NewTask`, `UpdateTask` y `TaskSummary` (Utility Types) |
+| Llamadas HTTP con tipo | 5 de 9 | **9 de 9** |
+| Type guard en datos externos | ninguno | `isTask` / `isUser` en la carga y en `getById`: se descartan elementos inválidos y una respuesta que no es una lista cuenta como error de carga |
+| Tests | 221 | **227** (6 nuevos: guards y filtrado en la frontera) |
+| Aplicación sin cambios visibles | — | Sí, salvo el título «Angular nivel intermedio» pedido para distinguirla de la del Básico |
+
+Se comprobó que los datos reales superan los guards: las semillas del backend (`users.json`, `todos.json`) y la
+respuesta de `TodoOut` (con `createdAt: str`) encajan con `isTask`/`isUser`.
+
+**Diferencias con el enunciado, a propósito:** se mantienen `Task`/`User` con campos en inglés (los de la API)
+en lugar de `Tarea`/`Usuario`, y no se añaden `prioridad`, `descripcion` ni `activo`, que la API no tiene.
