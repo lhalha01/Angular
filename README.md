@@ -16,7 +16,7 @@ carpeta `Lab NN`, con su enunciado (`Lab NN.md`) y, cuando corresponde, el proye
 | Nivel | Carpeta | Laboratorios | Práctica final | Estado |
 | --- | --- | --- | --- | --- |
 | Básico | `1-Basico` | Lab 01 a Lab 09 | Lab 10 y Lab 10.1 | Completado |
-| Intermedio | `2-Intermedio` | Lab 11 a Lab 19 | Lab 20 y Lab 20.1 | En curso: Lab 11.1, Lab 11.2 y Lab 12.1 hechos; Lab 12.2 pendiente; enunciado de Lab 13 añadido |
+| Intermedio | `2-Intermedio` | Lab 11 a Lab 19 | Lab 20 y Lab 20.1 | En curso: Lab 11.1, Lab 11.2, Lab 12.1 y Lab 12.2 hechos; enunciado de Lab 13 añadido |
 | Avanzado | `3-Avanzado` | Lab 21 a Lab 28 | Lab 29 | Pendiente (enunciados por añadir) |
 
 ## Proyectos del nivel Básico
@@ -49,7 +49,7 @@ dividen en dos carpetas, cada una con su propio enunciado extraído de él:
 | Lab 11.1 | `2-Intermedio/Lab 11/Lab 11.1/talenthub` | TalentHub: modelos de dominio, DTOs, mappers y type guards | Hecho |
 | Lab 11.2 | `2-Intermedio/Lab 11/Lab 11.2` | Tipado de la aplicación del Lab 10 (auditoría, modelos y type guards) | Hecho (versión adaptada) sobre la copia del Lab 10 en `2-Intermedio/Lab 10/tareas` |
 | Lab 12.1 | `2-Intermedio/Lab 12/Lab 12.1/talenthub` | TalentHub: arquitectura por features (`core`, `shared`, `features`), barrels, alias de rutas y comprobación de arquitectura | Hecho |
-| Lab 12.2 | `2-Intermedio/Lab 12/Lab 12.2` | Reestructurar la aplicación de tareas y usuarios por features | Se hará sobre la copia del Lab 10 de `2-Intermedio/Lab 10/tareas`, no sobre la de `1-Basico` (véase el [análisis de aplicabilidad](2-Intermedio/Lab%2012/Lab%2012.2/Analisis-aplicabilidad.md)) |
+| Lab 12.2 | `2-Intermedio/Lab 12/Lab 12.2` | Reestructurar la aplicación de tareas y usuarios por features | Hecho (versión adaptada) sobre la copia del Lab 10 de `2-Intermedio/Lab 10/tareas`: features `tareas` y `usuarios`, barrels y alias (véase el README de la app) |
 
 ## Estructura de dependencias
 

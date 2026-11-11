@@ -1,0 +1,105 @@
+Lab 12.2 - Gestor de Tareas - Estructura de carpetas (src/app)
+Fecha: 11 de noviembre de 2026 a las 14:48:27
+
+src/app/
+├── core
+│   ├── guards
+│   │   ├── unsaved-changes.guard.spec.ts
+│   │   └── unsaved-changes.guard.ts
+│   ├── interceptors   (vacía, a rellenar en los Labs siguientes)
+│   ├── layout
+│   │   └── navbar
+│   │       ├── navbar.component.spec.ts
+│   │       └── navbar.component.ts
+│   ├── services
+│   │   ├── confirm.service.ts
+│   │   ├── ignore-server-outcome.spec.ts
+│   │   ├── ignore-server-outcome.ts
+│   │   ├── in-memory-resource.spec.ts
+│   │   ├── in-memory-resource.ts
+│   │   ├── storage.service.spec.ts
+│   │   ├── storage.service.ts
+│   │   ├── theme.service.spec.ts
+│   │   ├── theme.service.ts
+│   │   ├── toast.service.spec.ts
+│   │   └── toast.service.ts
+│   ├── api-error.spec.ts
+│   └── api-error.ts
+├── features
+│   ├── home
+│   │   ├── home.component.spec.ts
+│   │   ├── home.component.ts
+│   │   └── index.ts
+│   ├── tareas
+│   │   ├── components
+│   │   │   ├── add-task
+│   │   │   │   ├── add-task.component.spec.ts
+│   │   │   │   └── add-task.component.ts
+│   │   │   ├── task-card
+│   │   │   │   ├── task-card.component.spec.ts
+│   │   │   │   └── task-card.component.ts
+│   │   │   ├── task-detail
+│   │   │   │   ├── task-detail.component.spec.ts
+│   │   │   │   └── task-detail.component.ts
+│   │   │   ├── task-edit
+│   │   │   │   ├── task-edit.component.spec.ts
+│   │   │   │   └── task-edit.component.ts
+│   │   │   ├── task-form
+│   │   │   │   ├── task-form.component.spec.ts
+│   │   │   │   └── task-form.component.ts
+│   │   │   ├── task-list
+│   │   │   │   ├── task-list-params.spec.ts
+│   │   │   │   ├── task-list-params.ts
+│   │   │   │   ├── task-list.component.spec.ts
+│   │   │   │   ├── task-list.component.ts
+│   │   │   │   ├── task-query.spec.ts
+│   │   │   │   └── task-query.ts
+│   │   │   └── task-toolbar
+│   │   │       ├── task-toolbar.component.spec.ts
+│   │   │       └── task-toolbar.component.ts
+│   │   ├── models
+│   │   │   ├── task.model.spec.ts
+│   │   │   └── task.model.ts
+│   │   ├── services
+│   │   │   ├── task-actions.service.spec.ts
+│   │   │   ├── task-actions.service.ts
+│   │   │   ├── task.service.spec.ts
+│   │   │   └── task.service.ts
+│   │   ├── index.ts
+│   │   ├── tareas.routes.ts
+│   │   └── task.resolver.ts
+│   └── usuarios
+│       ├── components   (vacía, a rellenar en los Labs siguientes)
+│       ├── models
+│       │   ├── user.model.spec.ts
+│       │   └── user.model.ts
+│       ├── services
+│       │   ├── user.service.spec.ts
+│       │   └── user.service.ts
+│       └── index.ts
+├── shared
+│   ├── components
+│   │   ├── confirm-dialog
+│   │   │   ├── confirm-dialog.component.spec.ts
+│   │   │   └── confirm-dialog.component.ts
+│   │   ├── paginator
+│   │   │   ├── pagination.spec.ts
+│   │   │   ├── pagination.ts
+│   │   │   ├── paginator.component.spec.ts
+│   │   │   └── paginator.component.ts
+│   │   ├── state-message
+│   │   │   └── state-message.component.ts
+│   │   └── toast
+│   │       ├── toast-container.component.spec.ts
+│   │       └── toast-container.component.ts
+│   ├── directives
+│   │   ├── highlight-user.directive.spec.ts
+│   │   └── highlight-user.directive.ts
+│   └── pipes
+│       ├── task-status.pipe.spec.ts
+│       └── task-status.pipe.ts
+├── app.component.spec.ts
+├── app.component.ts
+├── app.config.ts
+├── app.routes.spec.ts
+└── app.routes.ts

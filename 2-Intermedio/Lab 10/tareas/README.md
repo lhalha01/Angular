@@ -57,7 +57,8 @@ lista (con "Reintentar") y, al guardar, un aviso que sugiere comprobar que el ba
 | `/tasks/:id/edit` | `TaskEditComponent` (ruta hija de `:id`) |
 | `/add-task` | `AddTaskComponent` |
 
-Todas se cargan con `loadComponent` (lazy) y el `:id` llega como `input()` (`withComponentInputBinding`).
+Cada pantalla es un chunk propio (`loadComponent`); la feature `tareas` aporta sus rutas con `loadChildren`
+(`tareas.routes.ts`) y `home` se carga por su barrel. El `:id` llega como `input()` (`withComponentInputBinding`).
 `/add-task` y `/tasks/:id/edit` llevan un guard `canDeactivate` (`unsavedChangesGuard`): si hay cambios sin guardar,
 antes de salir (enlace, Cancelar o botón atrás) se pide confirmación; cerrar o recargar la pestaña usa el aviso
 nativo del navegador.
@@ -78,29 +79,35 @@ nativo del navegador.
 
 ```text
 src/app
-├── core/                  modelos y servicios sin interfaz
-│   ├── in-memory-resource.ts   base común de TaskService y UserService (estado en memoria)
-│   ├── ignore-server-outcome.ts  qué se hace con las respuestas de la API simulada
-│   ├── api-error.ts            describeApiError: texto para el usuario cuando la API falla
-│   └── storage.service.ts      localStorage que nunca lanza (tema y vista)
-├── environments/          URL de la API y modo (`persistentApi`) según la configuración de compilación
-├── shared/                piezas reutilizables sin lógica de negocio
-│   ├── paginator/         <app-paginator> + paginate() (lógica pura)
-│   ├── state-message/     tarjeta de estado: cargando, error, vacío, no encontrado
-│   ├── confirm-dialog/    modal sobre <dialog>
-│   ├── toast/             avisos
-│   └── pipes/, directives/
-└── features/
-    ├── home/
-    └── tasks/
-        ├── task-list/     pantalla; task-query.ts (filtrar/ordenar) y task-list-params.ts (URL) son funciones puras
-        ├── task-card/     tarjeta/fila de una tarea (componente "tonto": inputs y outputs)
-        ├── task-toolbar/  búsqueda, filtros, orden y vista (cada control es un `model()`)
-        ├── task-form/     formulario compartido por "crear" y "editar"
-        ├── task-detail/, task-edit/, add-task/
-        ├── task-actions.service.ts   confirmar + modificar + avisar (+ Deshacer)
-        └── task.resolver.ts          carga la tarea de `:id` antes de activar la ruta
+├── core/                       infraestructura sin lógica de negocio; no depende de features
+│   ├── guards/                 unsaved-changes.guard (canDeactivate)
+│   ├── interceptors/           (vacía: la rellena el Lab 14)
+│   ├── layout/navbar/          cabecera: marca, título del nivel, enlaces y selector de tema
+│   ├── services/               in-memory-resource (base común del estado en memoria), ignore-server-outcome,
+│   │                           storage (localStorage que nunca lanza), theme, toast, confirm
+│   └── api-error.ts            describeApiError: texto para el usuario cuando la API falla
+├── shared/                     piezas reutilizables sin lógica de negocio; no depende de features
+│   ├── components/             paginator (+ paginate(), lógica pura), state-message, confirm-dialog (<dialog>), toast
+│   ├── directives/             appHighlightUser
+│   └── pipes/                  taskStatus
+├── features/                   cada feature se importa solo por su barrel (`@features/<feature>`)
+│   ├── home/                   index.ts
+│   ├── tareas/                 index.ts + tareas.routes.ts (rutas /tasks y /add-task, cargadas con loadChildren)
+│   │   ├── models/             task.model.ts (Task, NewTask…, isTask)
+│   │   ├── services/           task.service.ts, task-actions.service.ts (confirmar + modificar + avisar + Deshacer)
+│   │   ├── components/         task-list (pantalla; task-query.ts y task-list-params.ts son funciones puras),
+│   │   │                       task-card, task-toolbar, task-form, task-detail, task-edit, add-task
+│   │   └── task.resolver.ts    carga la tarea de `:id` antes de activar la ruta
+│   └── usuarios/               index.ts
+│       ├── models/             user.model.ts (User, UserDraft, isUser)
+│       ├── services/           user.service.ts
+│       └── components/         (vacía)
+└── environments/ (fuera de src/app)   URL de la API y modo (`persistentApi`) según la configuración de compilación
 ```
+
+Alias de rutas (`tsconfig.json`): `@core/*`, `@shared/*` y `@features/*`. La arquitectura se vigila con la regla
+`no-restricted-imports` de ESLint (sin rutas internas de otra feature) y con `npm run check:architecture`
+(barrels, capas, dependencias entre features y `OnPush`), que tiene sus propios tests (`npm run test:architecture`).
 
 - **La lista solo orquesta** (≈190 líneas): guarda el estado de la consulta, lo sincroniza con la URL y delega.
   La lógica está en funciones puras con tests propios; la presentación, en componentes pequeños.
@@ -123,7 +130,7 @@ src/app
 - **Ciclo de vida**: `TaskFormComponent.ngOnChanges` reinicia el formulario con una copia cada vez que el padre pasa
   un valor inicial; `TaskListComponent.ngOnInit` lee los filtros de la URL; `ToastService.ngOnDestroy` cancela los
   temporizadores pendientes. El resto del estado reactivo usa signals y `effect()`, que se limpian solos.
-- **Pruebas**: `npm test` ejecuta 221 tests (cobertura ≈99 % de líneas), incluida una prueba de integración
+- **Pruebas**: `npm test` ejecuta 229 tests (cobertura ≈99 % de líneas: 99,45 %), incluida una prueba de integración
   de las rutas reales. 40 de ellos cubren el modo del backend propio: ids y fechas del servidor, errores que
   llegan al usuario, "Deshacer" contra la API (incluido el 409) y los formularios de crear y editar.
 - **UserService** (servicio mock de `Servicios_mock.md`): listar, obtener por id, crear (POST) y eliminar (DELETE)
@@ -164,5 +171,16 @@ src/app
 | Las 4 llamadas `HttpClient` que no llevaban tipo (`post`, `put`, `delete` de `InMemoryResource`) ahora lo llevan | 11.2 |
 | Modelos movidos a `src/app/models/`, con tipos derivados por Utility Types (`NewTask`, `UpdateTask`, `TaskSummary`) | 11.2 |
 | Type guards `isTask` e `isUser` aplicados a las respuestas HTTP: los elementos con forma inválida se descartan y una respuesta que no es una lista se trata como error de carga | 11.2 |
+| Arquitectura por features: `core/`, `shared/` y `features/{home,tareas,usuarios}` con barrels, alias `@core`, `@shared` y `@features`, rutas por feature (`loadChildren`), `NavbarComponent` en `core/layout`, regla de ESLint y `npm run check:architecture` | 12.2 |
+
+### Diferencias del Lab 12.2 con su enunciado
+
+- **Nombres:** las carpetas son `tareas` y `usuarios` (como en el esquema), pero los tipos siguen siendo `Task`, `User` y `TaskService`, los de la API.
+- **Imports entre features:** el enunciado pide ninguno, pero `tareas` importa `usuarios` (el responsable de cada tarea). Se admite solo por el barrel y en un sentido: `usuarios` no importa `tareas`. Lo vigila la regla `features` de `npm run check:architecture` (`ALLOWED_FEATURE_DEPS`).
+- **Barrels:** los tipos se exportan con `export type { … }` (`isolatedModules`) y solo exponen lo que otras partes usan (`TaskActions` es interno de `tareas`). Cada ruta de `paths` empieza por `./` (sin él, TS5090).
+- **Rutas por feature:** `app.routes.ts` carga `tareas` con `loadChildren` a `tareas.routes.ts` y `home` por su barrel; es lo único que se admite importar fuera del barrel.
+- **Piezas añadidas al esquema:** `core/services`, `shared/directives`, `features/home`, `tareas.routes.ts` y `task.resolver.ts`. La cabecera se extrajo a `core/layout/navbar`; `core/interceptors` y `features/usuarios/components` quedan vacías (`.gitkeep`) hasta los Labs que las usan.
+
+Evidencias del Lab 12.2 en [`../../Lab 12/Lab 12.2/evidencias/`](../../Lab%2012/Lab%2012.2/evidencias/) (estructura de carpetas, `ng build`, lint y arquitectura, app en marcha).
 
 Evidencias del Lab 11.2 en [`../../Lab 11/Lab 11.2/evidencias/`](../../Lab%2011/Lab%2011.2/evidencias/) (las capturas que pide su entregable): `ng-lint.png` (salida real de `ng lint`, sin errores), `app-funcionando.png` (captura real de la aplicación en marcha, con las 200 tareas cargadas y sin cambios visibles salvo el título) y, en texto, `lint.txt` y `tsc-strict.txt`.

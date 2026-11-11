@@ -1,0 +1,9 @@
+$ npx ng lint
+Linting "tareas"...
+All files pass linting.
+$ npm run check:architecture
+Arquitectura correcta: sin infracciones (reglas: barrel, capas, features, onpush).
+$ npm run test:architecture
+# tests 16
+# pass 16
+# fail 0

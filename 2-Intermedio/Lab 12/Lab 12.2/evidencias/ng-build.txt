@@ -1,0 +1,34 @@
+$ npx ng build
+❯ Building...
+✔ Building...
+Initial chunk files   | Names                 |  Raw size | Estimated transfer size
+chunk-SOOP7AAP.js     | -                     | 167.59 kB |                48.96 kB
+chunk-OQWITRYC.js     | -                     |  99.25 kB |                25.64 kB
+polyfills-YMBILSHJ.js | polyfills             |  34.59 kB |                11.33 kB
+main-FBFHOR74.js      | main                  |   9.58 kB |                 3.28 kB
+styles-TIKN56VU.css   | styles                |   3.74 kB |                 1.14 kB
+chunk-HLSHLWMZ.js     | -                     | 693 bytes |               693 bytes
+chunk-H5DDIB4A.js     | -                     | 421 bytes |               421 bytes
+chunk-VLKSS4QX.js     | -                     | 357 bytes |               357 bytes
+
+                      | Initial total         | 316.21 kB |                91.83 kB
+
+Lazy chunk files      | Names                 |  Raw size | Estimated transfer size
+chunk-YTPI5OA4.js     | -                     |  37.25 kB |                 7.90 kB
+chunk-3R75Z2YV.js     | task-list-component   |  18.06 kB |                 5.46 kB
+chunk-RLKCWZMF.js     | -                     |   3.94 kB |                 1.56 kB
+chunk-D7UKFOJ3.js     | task-detail-component |   2.35 kB |                 1.07 kB
+chunk-R4M4EVYT.js     | -                     |   2.17 kB |               785 bytes
+chunk-OZA7HDBA.js     | task-edit-component   |   1.91 kB |               946 bytes
+chunk-62XXQIVH.js     | add-task-component    |   1.28 kB |               643 bytes
+chunk-SWOKEXQC.js     | index                 |   1.26 kB |               632 bytes
+chunk-YIX6UNTM.js     | tareas-routes         |   1.03 kB |               465 bytes
+chunk-NF2M5N4Q.js     | -                     | 962 bytes |               962 bytes
+chunk-F2CRRENP.js     | -                     | 784 bytes |               784 bytes
+chunk-INIE3MLV.js     | -                     | 704 bytes |               704 bytes
+chunk-WCQSDWSW.js     | -                     | 484 bytes |               484 bytes
+
+Application bundle generation complete. [2.266 seconds] - 2026-11-11T13:48:36.280Z
+
+Output location: C:\Proyectos\Angular\2-Intermedio\Lab 10\tareas\dist\tareas
+

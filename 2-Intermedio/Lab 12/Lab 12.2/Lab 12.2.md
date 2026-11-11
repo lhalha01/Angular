@@ -3,7 +3,7 @@
 # Lab 12.2: Arquitectura por features — estructura de la aplicación de tareas y usuarios
 
 > Extraído de `../Lab 12.md` (segunda mitad del documento original).
-> Continúa el itinerario "tareas y usuarios" del [Lab 11.2](../../Lab%2011/Lab%2011.2/Lab%2011.2.md), que aún está pendiente.
+> Continúa el itinerario "tareas y usuarios" del [Lab 11.2](../../Lab%2011/Lab%2011.2/Lab%2011.2.md), que ya está realizado (versión adaptada).
 
 ## Prerequisitos
 

@@ -4,9 +4,9 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router, withComponentInputBinding } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { routes } from './app.routes';
-import { Task } from './models/task.model';
-import { ConfirmService } from './core/services/confirm.service';
-import { TaskService } from './core/services/task.service';
+import { Task } from '@features/tareas';
+import { ConfirmService } from '@core/services/confirm.service';
+import { TaskService } from '@features/tareas';
 
 const TODOS = 'https://jsonplaceholder.typicode.com/todos';
 const USERS = 'https://jsonplaceholder.typicode.com/users';

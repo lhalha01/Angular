@@ -3,6 +3,21 @@ const eslint = require("@eslint/js");
 const tseslint = require("typescript-eslint");
 const angular = require("angular-eslint");
 
+// Una feature se importa a través de su barrel (`@features/<feature>`), no de una ruta interna.
+// (`no-restricted-imports` solo mira los `import ... from` estáticos: el import dinámico del archivo de
+// rutas, que usa la carga diferida del Lab 13, queda fuera. `npm run check:architecture` cubre el resto.)
+const DEEP_FEATURE_IMPORT = {
+  group: ["@features/*/*"],
+  message: "Importa la feature a través de su barrel (`@features/<feature>`), no de una ruta interna.",
+};
+
+// Los DTOs describen el formato de la API y no deben salir de la capa de mapeo.
+const DTO_IMPORT = {
+  group: ["**/*.dto"],
+  message:
+    "Los DTOs solo pueden importarse desde un *.mapper.ts. Usa el modelo de dominio y la función de mapeo.",
+};
+
 module.exports = tseslint.config(
   {
     files: ["**/*.ts"],
@@ -14,7 +29,7 @@ module.exports = tseslint.config(
     ],
     processor: angular.processInlineTemplates,
     rules: {
-      // Criterio del Lab 11.1: ni `any` explícito ni `as any` como atajo para compilar.
+      // Sin `any` explícito ni `as any` como atajo para compilar (RNF-06 del briefing).
       "@typescript-eslint/no-explicit-any": "error",
       "@angular-eslint/directive-selector": [
         "error",
@@ -35,24 +50,19 @@ module.exports = tseslint.config(
     },
   },
   {
-    // Los DTOs describen el formato de la API y no deben salir de la capa de mapeo:
-    // solo los `*.mapper.ts` (y sus tests) pueden importarlos. El resto de la aplicación
-    // trabaja con los modelos de dominio.
+    // En todo el código: sin imports a rutas internas de otra feature.
+    files: ["src/**/*.ts"],
+    rules: {
+      "no-restricted-imports": ["error", { patterns: [DEEP_FEATURE_IMPORT] }],
+    },
+  },
+  {
+    // Salvo los mappers (y sus tests), nadie importa un DTO. Esta configuración sustituye a la anterior para
+    // esos archivos, así que repite la regla de las features.
     files: ["src/**/*.ts"],
     ignores: ["src/**/*.mapper.ts", "src/**/*.mapper.spec.ts", "src/**/*.dto.ts"],
     rules: {
-      "no-restricted-imports": [
-        "error",
-        {
-          patterns: [
-            {
-              group: ["**/*.dto"],
-              message:
-                "Los DTOs solo pueden importarse desde un *.mapper.ts. Usa el modelo de dominio y la función de mapeo.",
-            },
-          ],
-        },
-      ],
+      "no-restricted-imports": ["error", { patterns: [DTO_IMPORT, DEEP_FEATURE_IMPORT] }],
     },
   },
   {
