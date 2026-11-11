@@ -111,10 +111,10 @@ cabecera `X-Total-Count` (por eso esa cabecera está expuesta a CORS).
 
 ## Datos y persistencia
 
-- La base de datos es el archivo `data/app.db`. **El repositorio incluye una con datos de ejemplo** (9 usuarios y
-  180 tareas), así que quien clone parte de ella sin hacer nada. Si el archivo no existe, se crea solo al arrancar.
-  Es el único archivo de `data/` que se versiona (véase "La base de datos en git").
-- Cuando se crea de cero, se rellena con los 10 usuarios y las 200 tareas de JSONPlaceholder (copiados una vez en
+- La base de datos es el archivo `data/app.db`. **El repositorio incluye una con los datos de ejemplo** (10 usuarios y
+  200 tareas, los de JSONPlaceholder), así que quien clone parte de ella sin hacer nada. Si el archivo no existe, se
+  crea solo al arrancar. Es el único archivo de `data/` que se versiona (véase "La base de datos en git").
+- Cuando se crea de cero, se rellena con esos mismos 10 usuarios y 200 tareas (copiados una vez en
   `app/seed/`, así que no hace falta internet para usarlo). A cada tarea se le asigna una fecha de creación
   distinta (un minuto más antigua por cada id).
 - Los datos iniciales se cargan **tabla a tabla, solo cuando la tabla es nueva**. Así, una base de datos

@@ -63,9 +63,8 @@ No hace falta instalar nada más: ni una base de datos (SQLite viene con Python)
 4. **Deja esa terminal abierta**: el backend funciona mientras no la cierres. Para pararlo, pulsa `Ctrl + C`.
 
 Lo que hace el script por ti la primera vez: crea un entorno virtual (`.venv`), instala las dependencias de
-`requirements.txt`, usa la base de datos `data/app.db` que trae el repositorio (9 usuarios y 180 tareas de ejemplo;
-si no existe, la crea con los 10 usuarios y 200 tareas de JSONPlaceholder) y
-arranca el servidor. Las siguientes veces solo comprueba y arranca.
+`requirements.txt`, usa la base de datos `data/app.db` que trae el repositorio (10 usuarios y 200 tareas de ejemplo;
+si no existe, la crea con esos mismos datos) y arranca el servidor. Las siguientes veces solo comprueba y arranca.
 
 ### Opciones
 
