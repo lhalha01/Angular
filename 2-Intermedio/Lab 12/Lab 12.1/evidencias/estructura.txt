@@ -1,0 +1,65 @@
+Lab 12.1 - TalentHub - Estructura de carpetas (src/app)
+Fecha: 11 de noviembre de 2026 a las 12:59:27
+
+src/app/
+├── core
+│   ├── guards
+│   ├── interceptors
+│   └── layout
+│       ├── footer
+│       │   ├── footer.html
+│       │   ├── footer.scss
+│       │   ├── footer.spec.ts
+│       │   └── footer.ts
+│       └── navbar
+│           ├── navbar.html
+│           ├── navbar.scss
+│           ├── navbar.spec.ts
+│           └── navbar.ts
+├── features
+│   ├── dashboard
+│   │   ├── components
+│   │   │   └── dashboard
+│   │   │       ├── dashboard.spec.ts
+│   │   │       └── dashboard.ts
+│   │   ├── index.spec.ts
+│   │   └── index.ts
+│   ├── empleados
+│   │   ├── components
+│   │   ├── mappers
+│   │   │   ├── empleado.dto.ts
+│   │   │   ├── empleado.mapper.spec.ts
+│   │   │   └── empleado.mapper.ts
+│   │   ├── models
+│   │   │   ├── empleado.model.spec.ts
+│   │   │   └── empleado.model.ts
+│   │   ├── resolvers
+│   │   ├── services
+│   │   │   └── empleado.service.ts
+│   │   ├── index.spec.ts
+│   │   └── index.ts
+│   └── proyectos
+│       ├── components
+│       ├── models
+│       │   └── proyecto.model.ts
+│       ├── services
+│       │   └── proyecto.service.ts
+│       ├── index.spec.ts
+│       └── index.ts
+├── shared
+│   ├── components
+│   │   ├── avatar
+│   │   ├── badge-disponibilidad
+│   │   └── spinner
+│   └── validators
+├── app.config.ts
+├── app.html
+├── app.routes.ts
+├── app.scss
+├── app.spec.ts
+└── app.ts
+
+26 carpetas, 30 archivos (las carpetas vacias llevan un .gitkeep, que no se muestra)
+
+> npx tsc --noEmit  ->  codigo de salida 0
+> npm run -s check:architecture  ->  codigo de salida 0

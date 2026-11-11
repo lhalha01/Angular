@@ -16,7 +16,7 @@ carpeta `Lab NN`, con su enunciado (`Lab NN.md`) y, cuando corresponde, el proye
 | Nivel | Carpeta | Laboratorios | Práctica final | Estado |
 | --- | --- | --- | --- | --- |
 | Básico | `1-Basico` | Lab 01 a Lab 09 | Lab 10 y Lab 10.1 | Completado |
-| Intermedio | `2-Intermedio` | Lab 11 a Lab 19 | Lab 20 y Lab 20.1 | En curso: Lab 11.1 hecho; Lab 11.2 pendiente; enunciados de Lab 12 y Lab 13 añadidos |
+| Intermedio | `2-Intermedio` | Lab 11 a Lab 19 | Lab 20 y Lab 20.1 | En curso: Lab 11.1 y Lab 12.1 hechos; Lab 11.2 y Lab 12.2 pendientes; enunciado de Lab 13 añadido |
 | Avanzado | `3-Avanzado` | Lab 21 a Lab 28 | Lab 29 | Pendiente (enunciados por añadir) |
 
 ## Proyectos del nivel Básico
@@ -39,13 +39,16 @@ Cada laboratorio parte del código del anterior (cabecera, rutas y componentes a
 
 ## Proyectos del nivel Intermedio
 
-El **Lab 11** reúne dos laboratorios en un solo enunciado (`2-Intermedio/Lab 11/Lab 11.md`, que se conserva tal
-cual), así que se divide en dos carpetas, cada una con su propio enunciado extraído de él:
+Los **Labs 11 y 12** reúnen cada uno dos laboratorios en un solo enunciado (`Lab 11.md` y `Lab 12.md`, que se
+conservan tal cual): el itinerario de **TalentHub** (`.1`) y el de la aplicación de **tareas y usuarios** (`.2`). Se
+dividen en dos carpetas, cada una con su propio enunciado extraído de él:
 
 | Laboratorio | Proyecto | Contenido | Estado |
 | --- | --- | --- | --- |
 | Lab 11.1 | `2-Intermedio/Lab 11/Lab 11.1/talenthub` | TalentHub: modelos de dominio, DTOs, mappers y type guards | Hecho |
 | Lab 11.2 | `2-Intermedio/Lab 11/Lab 11.2` | Tipado de la aplicación del Lab 10 (auditoría, modelos y type guards) | Pendiente de decidir el alcance: el enunciado no aplica tal cual (véase el [análisis de aplicabilidad](2-Intermedio/Lab%2011/Lab%2011.2/Analisis-aplicabilidad.md)) |
+| Lab 12.1 | `2-Intermedio/Lab 12/Lab 12.1/talenthub` | TalentHub: arquitectura por features (`core`, `shared`, `features`), barrels, alias de rutas y comprobación de arquitectura | Hecho |
+| Lab 12.2 | `2-Intermedio/Lab 12/Lab 12.2` | Reestructurar la aplicación de tareas y usuarios por features | Pendiente: continúa el Lab 11.2 |
 
 ## Estructura de dependencias
 
@@ -65,7 +68,7 @@ Estado actual por nivel:
 | Nivel | Dependencias |
 | --- | --- |
 | Básico (`1-Basico`) | Workspace propio: `1-Basico/package.json` con `workspaces: ["Lab 0*/*"]`, su lockfile y su `node_modules`, compartidos por Lab 01 a Lab 09. Lab 10 y Lab 10.1 quedan fuera del patrón y son autónomos. |
-| Intermedio (`2-Intermedio`) | Workspace propio: `2-Intermedio/package.json` con `workspaces: ["Lab 11/Lab 11.*/*", "Lab 1[2-9]/*"]`, su lockfile y su `node_modules`, compartidos por los Labs 11 a 19 (el Lab 11 tiene un nivel más de carpetas, por 11.1 y 11.2). Lab 20 y Lab 20.1 quedan fuera del patrón y serán autónomos. |
+| Intermedio (`2-Intermedio`) | Workspace propio: `2-Intermedio/package.json` con `workspaces: ["Lab 1[1-9]/Lab 1[1-9].*/*", "Lab 1[1-9]/*"]`, su lockfile y su `node_modules`, compartidos por los Labs 11 a 19 (el primer patrón cubre los laboratorios partidos en `.1` y `.2`, que tienen un nivel más de carpetas). Lab 20 y Lab 20.1 quedan fuera del patrón y serán autónomos. |
 | Avanzado (`3-Avanzado`) | **Sin workspace todavía**: solo contiene las carpetas de los labs con sus enunciados. |
 
 No hay `package.json` en la raíz del repositorio.
