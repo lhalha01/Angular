@@ -111,8 +111,10 @@ cabecera `X-Total-Count` (por eso esa cabecera está expuesta a CORS).
 
 ## Datos y persistencia
 
-- La base de datos es el archivo `data/app.db`, que se crea sola al arrancar y **no se sube a git**.
-- La primera vez se rellena con los 10 usuarios y las 200 tareas de JSONPlaceholder (copiados una vez en
+- La base de datos es el archivo `data/app.db`. **El repositorio incluye una con datos de ejemplo** (9 usuarios y
+  180 tareas), así que quien clone parte de ella sin hacer nada. Si el archivo no existe, se crea solo al arrancar.
+  Es el único archivo de `data/` que se versiona (véase "La base de datos en git").
+- Cuando se crea de cero, se rellena con los 10 usuarios y las 200 tareas de JSONPlaceholder (copiados una vez en
   `app/seed/`, así que no hace falta internet para usarlo). A cada tarea se le asigna una fecha de creación
   distinta (un minuto más antigua por cada id).
 - Los datos iniciales se cargan **tabla a tabla, solo cuando la tabla es nueva**. Así, una base de datos
@@ -120,7 +122,21 @@ cabecera `X-Total-Count` (por eso esa cabecera está expuesta a CORS).
   borras todos los registros de un recurso, al reiniciar no reaparecen.
 - Si la base de datos ya existía y se había borrado algún usuario, al sembrar `/todos` se omiten las tareas
   iniciales de esos usuarios (la clave foránea lo exige).
-- Para volver al estado inicial: `--reset`, o borrar `data/app.db`.
+- Para volver a los datos de JSONPlaceholder (10 usuarios y 200 tareas): `--reset`, o borrar `data/app.db`.
+
+### La base de datos en git
+
+`data/app.db` está versionada, pero **cambia cada vez que usas el backend**: crear, editar o borrar algo en una
+aplicación modifica ese archivo, y git lo mostrará como modificado. Es un archivo binario, así que no se puede
+fusionar ni revisar línea a línea. Para no subir tus cambios sin querer:
+
+```bash
+git restore backend/data/app.db                            # vuelve a la base de datos del repositorio
+git update-index --skip-worktree backend/data/app.db       # que git ignore tus cambios locales
+git update-index --no-skip-worktree backend/data/app.db    # deshacer lo anterior, si quieres subirla de nuevo
+```
+
+`--reset` también modifica el archivo (lo recrea con los datos de JSONPlaceholder).
 
 ### Migraciones
 

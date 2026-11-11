@@ -63,7 +63,8 @@ No hace falta instalar nada más: ni una base de datos (SQLite viene con Python)
 4. **Deja esa terminal abierta**: el backend funciona mientras no la cierres. Para pararlo, pulsa `Ctrl + C`.
 
 Lo que hace el script por ti la primera vez: crea un entorno virtual (`.venv`), instala las dependencias de
-`requirements.txt`, crea la base de datos `data/app.db` con los datos iniciales (10 usuarios y 200 tareas) y
+`requirements.txt`, usa la base de datos `data/app.db` que trae el repositorio (9 usuarios y 180 tareas de ejemplo;
+si no existe, la crea con los 10 usuarios y 200 tareas de JSONPlaceholder) y
 arranca el servidor. Las siguientes veces solo comprueba y arranca.
 
 ### Opciones
@@ -72,7 +73,7 @@ Se añaden detrás del comando:
 
 ```bash
 .\start.cmd --port 8001      # otro puerto (por defecto, 8000)
-.\start.cmd --reset          # borra la base de datos y vuelve a los datos iniciales
+.\start.cmd --reset          # borra la base de datos y la recrea con los datos de JSONPlaceholder (10 usuarios, 200 tareas)
 .\start.cmd --host 0.0.0.0   # la API accesible desde otros equipos (ver "Seguridad": no lo uses en redes abiertas)
 ```
 
@@ -329,7 +330,8 @@ Para que otro proyecto Angular pueda usar el backend:
 | En la consola del navegador: *"blocked by CORS policy"* | Casi siempre, el backend **no está arrancado** o devolvió un error 500 (esas respuestas salen sin cabeceras de CORS y el navegador lo presenta como un error de CORS) | Comprueba `/health` y mira la terminal del backend: ahí aparece el error real |
 | `npm run start:local` no existe | El proyecto no está adaptado | Sigue el apartado 7 |
 | La lista sale vacía o con datos raros | Estás en `npm start` (API pública) pero esperabas datos del backend, o al revés | Mira la URL de las peticiones en la pestaña Red del navegador: `localhost:8000` es el backend |
-| Quiero empezar de cero | — | `.\start.cmd --reset` (borra la base de datos y vuelve a los datos iniciales) |
+| Quiero empezar de cero | — | `.\start.cmd --reset` (borra la base de datos y la recrea con los datos de JSONPlaceholder) |
+| Git muestra `backend/data/app.db` como modificado | La base de datos está versionada y tus cambios la modifican | `git restore backend/data/app.db` para descartarlos (véase "La base de datos en git" en el [README](README.md)) |
 | `422` al guardar una tarea | Datos no válidos o el usuario no existe | Lee el motivo en el aviso; por ejemplo, el título debe tener entre 3 y 120 caracteres |
 | Ya no puedo crear tareas para el usuario 1 | Ese usuario se borró (el borrado es real y persistente) | Crea otro usuario o usa `--reset` |
 

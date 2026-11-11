@@ -2,5 +2,8 @@
 __pycache__/
 *.pyc
 .pytest_cache/
-# Bases de datos locales: se generan solas al arrancar
-data/
+
+# Bases de datos locales: solo se versiona data/app.db, la base de datos de ejemplo con la que
+# parte quien clona el repositorio. Cualquier otro archivo de data/ (copias, journal, wal...) se ignora.
+data/*
+!data/app.db

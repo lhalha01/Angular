@@ -156,5 +156,7 @@ Todas las entradas de los `package-lock.json` llevan hash de integridad y proced
 ## Notas
 
 - `node_modules/`, `dist/` y `.angular/` no se versionan (véase `.gitignore`).
+- Del backend sí se versiona la base de datos de ejemplo `backend/data/app.db`, para que quien clone tenga datos;
+  cambia cuando se usa el backend (véase "La base de datos en git" en [`backend/README.md`](backend/README.md)).
 - Angular 21 admite Node 20.19 y sería la siguiente migración posible; Angular 22 exige Node 22.22 o
   superior, incompatible con el requisito del curso.

@@ -2,3 +2,6 @@
 # un start.sh con CRLF falla en Linux/macOS, y un start.cmd con LF puede fallar en Windows.
 *.sh  text eol=lf
 *.cmd text eol=crlf
+
+# La base de datos SQLite es binaria: git no debe tocarla (ni convertir saltos de línea ni intentar fusionarla).
+*.db binary
