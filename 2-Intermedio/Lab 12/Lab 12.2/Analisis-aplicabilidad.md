@@ -57,8 +57,8 @@ relativa también cambia al anidar los componentes en una carpeta `components/`.
 2. **Nombres.** El enunciado usa `tareas`, `Tarea` y `TareaService`; el proyecto usa `tasks`, `Task` y `TaskService`
    (los de la API). Aplicarlo literalmente implicaría traducir el dominio, que es otro refactor.
 3. **Dependencia del Lab 11.2.** El enunciado supone que el 11.2 ya creó los modelos `Tarea` y `Usuario`. El 11.2
-   está sin realizar (véase su [análisis](../../Lab%2011/Lab%2011.2/Analisis-aplicabilidad.md)) y comparte la misma
-   dificultad: actúa sobre la misma aplicación.
+   se realizó en su versión adaptada sobre la copia del Lab 10 de `2-Intermedio/Lab 10/tareas`, con los modelos `Task` y
+   `User` en `src/app/models/` (no `Tarea` y `Usuario`).
 4. **Errores del propio enunciado**, ya encontrados y documentados en el [Lab 12.1](../Lab%2012.1/talenthub/README.md):
    los barrels que mezclan tipos y valores en un mismo `export { … }` no compilan con `isolatedModules`, los alias
    sin `./` dan el error TS5090, y los barrels citan servicios que no existen.
@@ -109,8 +109,9 @@ feature con sus barrels, los alias y mover el modelo y el servicio de tareas a s
 
 ## 8. Relación con el Lab 11.2
 
-El Lab 11.2 actúa sobre la misma aplicación y tiene la misma dependencia del Lab 10. Este documento no decide sobre
-el 11.2, que sigue pendiente: si el Lab 10 tampoco debe modificarse allí, valdría el mismo razonamiento.
+El Lab 11.2 ya está hecho (versión adaptada), sobre la copia del Lab 10 de `2-Intermedio/Lab 10/tareas`, que sí puede
+modificarse. Esa misma copia es el lugar natural para el Lab 12.2: las conclusiones de este documento sobre «no se puede
+sin tocar el Lab 10» se refieren al Lab 10 de `1-Basico`, que sigue sin tocarse.
 
 ## Método (reproducible)
 
