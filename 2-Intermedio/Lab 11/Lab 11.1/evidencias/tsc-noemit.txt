@@ -1,0 +1,12 @@
+Lab 11.1 - TalentHub - Comprobacion de tipos con TypeScript
+Fecha: 11 de noviembre de 2026 a las 12:37:13
+Node v20.20.1 | TypeScript 5.9.3 | @angular/core 20.3.35
+Carpeta: C:\Proyectos\Angular\2-Intermedio\Lab 11\Lab 11.1\talenthub
+
+PS C:\Proyectos\Angular\2-Intermedio\Lab 11\Lab 11.1\talenthub> npx tsc --noEmit
+[codigo de salida: 0]
+
+PS C:\Proyectos\Angular\2-Intermedio\Lab 11\Lab 11.1\talenthub> npx tsc --noEmit --strict
+[codigo de salida: 0]
+
+RESULTADO: sin errores (tsc no imprime nada cuando todo es correcto)
