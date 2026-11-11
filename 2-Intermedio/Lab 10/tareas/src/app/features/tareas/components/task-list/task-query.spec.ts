@@ -1,10 +1,10 @@
 import { Task } from '../../models/task.model';
-import { DEFAULT_QUERY, filterAndSort, hasActiveFilters, normalize, TaskQuery } from './task-query';
+import { DEFAULT_QUERY, effectiveSearch, filterAndSort, hasActiveFilters, normalize, TaskQuery } from './task-query';
 
 const TASKS: Task[] = [
-  { id: 1, userId: 1, title: 'Comprar pan', completed: true, createdAt: '2024-01-03T00:00:00Z' },
-  { id: 2, userId: 1, title: 'Llamar al médico', completed: false, createdAt: '2024-01-02T00:00:00Z' },
-  { id: 3, userId: 2, title: 'Estudiar Angular', completed: true, createdAt: '2024-01-01T00:00:00Z' },
+  { id: 1, userId: 1, title: 'Comprar pan', completed: true, priority: 'medium', createdAt: '2024-01-03T00:00:00Z' },
+  { id: 2, userId: 1, title: 'Llamar al médico', completed: false, priority: 'medium', createdAt: '2024-01-02T00:00:00Z' },
+  { id: 3, userId: 2, title: 'Estudiar Angular', completed: true, priority: 'medium', createdAt: '2024-01-01T00:00:00Z' },
 ];
 const ids = (tasks: Task[]) => tasks.map((t) => t.id);
 const query = (patch: Partial<TaskQuery>): TaskQuery => ({ ...DEFAULT_QUERY, ...patch });
@@ -68,13 +68,45 @@ describe('task-query', () => {
     });
 
     it('is true when something narrows the results', () => {
-      expect(hasActiveFilters(query({ search: 'x' }))).toBeTrue();
+      expect(hasActiveFilters(query({ search: 'pan' }))).toBeTrue();
       expect(hasActiveFilters(query({ status: 'pending' }))).toBeTrue();
       expect(hasActiveFilters(query({ user: 3 }))).toBeTrue();
+      expect(hasActiveFilters(query({ priority: 'high' }))).toBeTrue();
     });
 
-    it('ignores a search made only of spaces', () => {
+    it('ignores a search made only of spaces, or shorter than 2 characters (it is not a search)', () => {
       expect(hasActiveFilters(query({ search: '   ' }))).toBeFalse();
+      expect(hasActiveFilters(query({ search: 'x' }))).toBeFalse();
+      expect(hasActiveFilters(query({ search: ' x ' }))).toBeFalse();
+    });
+  });
+
+  describe('effectiveSearch', () => {
+    it('trims the text and drops it when it is shorter than 2 characters', () => {
+      expect(effectiveSearch('  pan ')).toBe('pan');
+      expect(effectiveSearch('p')).toBe('');
+      expect(effectiveSearch('   ')).toBe('');
+      expect(effectiveSearch('')).toBe('');
+    });
+  });
+
+  describe('priority filter', () => {
+    const withPriority: Task[] = [
+      { ...TASKS[0], priority: 'high' },
+      { ...TASKS[1], priority: 'low' },
+      { ...TASKS[2], priority: 'high' },
+    ];
+
+    it('keeps only the tasks with that priority', () => {
+      expect(ids(filterAndSort(withPriority, query({ priority: 'high', sort: 'date-asc' })))).toEqual([3, 1]);
+      expect(ids(filterAndSort(withPriority, query({ priority: 'low' })))).toEqual([2]);
+      expect(ids(filterAndSort(withPriority, query({ priority: 'medium' })))).toEqual([]);
+    });
+
+    it('«all» keeps every task, and it combines with the other filters', () => {
+      expect(filterAndSort(withPriority, query({ priority: 'all' })).length).toBe(3);
+      expect(ids(filterAndSort(withPriority, query({ priority: 'high', status: 'pending' })))).toEqual([]);
+      expect(ids(filterAndSort(withPriority, query({ priority: 'high', user: 2 })))).toEqual([3]);
     });
   });
 });

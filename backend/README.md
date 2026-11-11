@@ -88,15 +88,16 @@ un cuerpo no válido devuelve 422 y no guarda nada.
 
 ## Endpoints de `/todos`
 
-Tareas con el formato de JSONPlaceholder (`id`, `userId`, `title`, `completed`) más `createdAt`, la fecha de
-creación en ISO 8601 UTC (como `Date.toISOString()`), que JSONPlaceholder no tiene.
+Tareas con el formato de JSONPlaceholder (`id`, `userId`, `title`, `completed`) más dos campos que JSONPlaceholder
+no tiene: `createdAt`, la fecha de creación en ISO 8601 UTC (como `Date.toISOString()`), y `priority`
+(`"high"`, `"medium"` o `"low"`; por defecto `"medium"`).
 
 | Método y ruta | Qué hace | Respuesta |
 | --- | --- | --- |
-| `GET /todos` | Lista tareas, ordenadas por id. Filtros opcionales: `userId`, `completed` y `q` (busca en el título). Con `_page` y `_limit` (máx. 200) pagina; sin `_limit` devuelve todas. `X-Total-Count` es el total ya filtrado y antes de paginar | 200 |
+| `GET /todos` | Lista tareas, ordenadas por id. Filtros opcionales: `userId`, `completed`, `priority` y `q` (busca en el título). Con `_page` y `_limit` (máx. 200) pagina; sin `_limit` devuelve todas. `X-Total-Count` es el total ya filtrado y antes de paginar | 200 |
 | `GET /todos/{id}` | Una tarea | 200, o 404 |
 | `POST /todos` | Crea una tarea. **Id y fecha los asigna el servidor**; si se envían `id` y/o `createdAt`, se respetan (el `id` solo si está libre, si no **409**). Así se **restaura** una tarea borrada tal como era | 201 |
-| `PUT /todos/{id}` | Sustituye la tarea. La fecha de creación y el id no cambian aunque vengan en el cuerpo | 200, o 404 |
+| `PUT /todos/{id}` | Sustituye la tarea. La fecha de creación y el id no cambian aunque vengan en el cuerpo. **Si el cuerpo no trae `priority`, se conserva la actual** (así un cliente anterior a ese campo no la reinicia al guardar) | 200, o 404 |
 | `PATCH /todos/{id}` | Cambia solo los campos enviados | 200, o 404 |
 | `DELETE /todos/{id}` | Borra la tarea | 204, o 404 |
 
@@ -143,6 +144,10 @@ git update-index --no-skip-worktree backend/data/app.db    # deshacer lo anterio
 La versión del esquema se guarda en la propia base de datos (`PRAGMA user_version`). Al arrancar, una base
 de datos anterior se migra sola:
 
+- **Versión 3 (`todos.priority`):** `ALTER TABLE … ADD COLUMN priority … DEFAULT 'medium'` con una restricción `CHECK`
+  (`high`, `medium` o `low`). Las tareas que ya existían quedan en `medium`; no se pierde nada. Una base de datos
+  nueva y `--reset` reparten la prioridad de las 200 tareas de ejemplo según el id (`semilla`: `app/seed/todos.json`),
+  para que el filtro por prioridad tenga qué filtrar.
 - **Versión 2 (relación `todos` → `users`):** SQLite no permite añadir una clave foránea a una tabla existente,
   así que se reconstruye `todos`, conservando ids, fechas y el contador de ids (un id borrado nunca se
   reutiliza). Las tareas **huérfanas** (de usuarios que ya no existen) **se eliminan**, porque con la
@@ -167,7 +172,7 @@ Pensado para uso local y didáctico:
 .venv/bin/python -m pytest
 ```
 
-109 tests: listado, filtros, paginación, búsqueda, alta, PUT, PATCH, borrado, validaciones, restauración de
+131 tests: listado, filtros, prioridad (y su migración), paginación, búsqueda, alta, PUT, PATCH, borrado, validaciones, restauración de
 registros borrados, la relación entre tareas y usuarios (incluido el borrado en cascada, también impuesto
 por la base de datos), CORS, persistencia (los cambios sobreviven a reiniciar el servidor) y las migraciones
 de una base de datos existente (huérfanas, ids, fechas y reintentos).

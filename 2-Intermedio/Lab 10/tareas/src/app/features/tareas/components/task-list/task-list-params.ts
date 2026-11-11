@@ -1,5 +1,6 @@
 import { ParamMap, Params } from '@angular/router';
 import { DEFAULT_PAGE_SIZE, PAGE_SIZES, PageSize } from '@shared/components/paginator/pagination';
+import { isPriority } from '../../models/task.model';
 import { DEFAULT_QUERY, DEFAULT_SORT, SORTS, TaskQuery } from './task-query';
 
 /** Todo lo que se guarda en la URL de la lista. */
@@ -22,6 +23,9 @@ export function readParams(params: ParamMap): ListState {
   const user = Number(params.get('usuario'));
   if (params.has('usuario') && Number.isInteger(user) && user > 0) state.user = user;
 
+  const priority = params.get('prioridad');
+  if (isPriority(priority)) state.priority = priority;
+
   const sort = SORTS.find((s) => s.value === params.get('orden'));
   if (sort) state.sort = sort.value;
 
@@ -40,6 +44,7 @@ export function toParams(state: ListState): Params {
     q: state.search.trim() || null,
     estado: state.status === 'all' ? null : state.status,
     usuario: state.user === 'all' ? null : state.user,
+    prioridad: state.priority === 'all' ? null : state.priority,
     orden: state.sort === DEFAULT_SORT ? null : state.sort,
     tam: state.pageSize === DEFAULT_PAGE_SIZE ? null : state.pageSize,
     pag: state.page > 1 ? state.page : null,

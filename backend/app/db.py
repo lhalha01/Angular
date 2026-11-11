@@ -39,7 +39,8 @@ TODOS_COLUMNS = """
     user_id    INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     title      TEXT NOT NULL,
     completed  INTEGER NOT NULL DEFAULT 0,
-    created_at TEXT NOT NULL   -- ISO 8601 en UTC, p. ej. 2026-11-11T09:30:00.000Z
+    created_at TEXT NOT NULL,  -- ISO 8601 en UTC, p. ej. 2026-11-11T09:30:00.000Z
+    priority   TEXT NOT NULL DEFAULT 'medium' CHECK (priority IN ('high', 'medium', 'low'))
 """
 
 TODOS_SCHEMA = f"""
@@ -49,7 +50,12 @@ CREATE INDEX idx_todos_user_id ON todos (user_id);
 
 # Versión del esquema (PRAGMA user_version). Las bases de datos anteriores valen 0.
 #   2: `todos.user_id` pasa a ser una clave foránea hacia `users` con borrado en cascada.
-SCHEMA_VERSION = 2
+#   3: `todos.priority` ('high' | 'medium' | 'low', por defecto 'medium').
+SCHEMA_VERSION = 3
+
+# Prioridad de las tareas iniciales: se reparte según el id (1 → media, 2 → baja, 0 → alta) para que el
+# filtro por prioridad tenga algo que filtrar en los datos de ejemplo.
+SEED_PRIORITIES = {0: "high", 1: "medium", 2: "low"}
 
 
 def now_iso(moment: datetime | None = None) -> str:
@@ -94,10 +100,11 @@ def _seed_todos(conn: sqlite3.Connection) -> None:
     todos = [t for t in todos if t["userId"] in user_ids]
     now = datetime.now(timezone.utc)
     conn.executemany(
-        "INSERT INTO todos (id, user_id, title, completed, created_at) "
-        "VALUES (:id, :user_id, :title, :completed, :created_at)",
+        "INSERT INTO todos (id, user_id, title, completed, created_at, priority) "
+        "VALUES (:id, :user_id, :title, :completed, :created_at, :priority)",
         [
             {
+                "priority": t.get("priority") or SEED_PRIORITIES[t["id"] % 3],
                 "id": t["id"],
                 "user_id": t["userId"],
                 "title": t["title"],
@@ -156,6 +163,22 @@ def _migrate_todos_add_foreign_key(conn: sqlite3.Connection) -> int:
         conn.execute("PRAGMA foreign_keys = ON")
 
 
+def _migrate_todos_add_priority(conn: sqlite3.Connection) -> bool:
+    """Esquema 2 → 3: añade `todos.priority` (las tareas existentes quedan en 'medium').
+
+    Si la tabla ya trae la columna (p. ej. la acaba de reconstruir la migración anterior con el esquema
+    actual) no hace nada. Devuelve si añadió la columna.
+    """
+    columns = {row["name"] for row in conn.execute("PRAGMA table_info(todos)")}
+    if "priority" in columns:
+        return False
+    conn.execute(
+        "ALTER TABLE todos ADD COLUMN priority TEXT NOT NULL DEFAULT 'medium' "
+        "CHECK (priority IN ('high', 'medium', 'low'))"
+    )
+    return True
+
+
 def init_db(db_path: Path) -> None:
     """Crea las tablas que falten, carga los datos iniciales de **cada tabla nueva** y migra el
     esquema de una base de datos anterior.
@@ -178,9 +201,11 @@ def init_db(db_path: Path) -> None:
         conn.commit()
 
         # Una tabla recién creada ya tiene el esquema actual; solo se migran las que existían.
-        if conn.execute("PRAGMA user_version").fetchone()[0] < SCHEMA_VERSION:
+        version = conn.execute("PRAGMA user_version").fetchone()[0]
+        if version < SCHEMA_VERSION:
             if "todos" in existing:
-                removed = _migrate_todos_add_foreign_key(conn)
+                removed = _migrate_todos_add_foreign_key(conn) if version < 2 else 0
+                _migrate_todos_add_priority(conn)
                 if removed:
                     logger.warning(
                         "Migración de la base de datos: se eliminaron %d tareas huérfanas "

@@ -12,8 +12,8 @@ import { TaskService } from '@features/tareas';
 const TODOS = 'https://jsonplaceholder.typicode.com/todos';
 const USERS = 'https://jsonplaceholder.typicode.com/users';
 const SEED: Task[] = [
-  { id: 1, userId: 1, title: 'Comprar pan', completed: true, createdAt: '2024-01-03T00:00:00Z' },
-  { id: 2, userId: 1, title: 'Llamar al médico', completed: false, createdAt: '2024-01-02T00:00:00Z' },
+  { id: 1, userId: 1, title: 'Comprar pan', completed: true, priority: 'medium', createdAt: '2024-01-03T00:00:00Z' },
+  { id: 2, userId: 1, title: 'Llamar al médico', completed: false, priority: 'medium', createdAt: '2024-01-02T00:00:00Z' },
 ];
 
 /** Integración de las rutas reales: resolver, herencia del :id y navegación entre hijas (con sesión iniciada). */

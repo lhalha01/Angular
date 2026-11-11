@@ -1,0 +1,23 @@
+Lab 15.2 Gestor de Tareas - Network: debounce y peticiones canceladas (recorrido real en Chrome con 900 ms de latencia simulada)
+
+1. Teclear "delectus" deprisa:
+     13 ms  tecla «d»
+    105 ms  tecla «e»
+    202 ms  tecla «l»
+    299 ms  tecla «e»
+    386 ms  tecla «c»
+    484 ms  tecla «t»
+    575 ms  tecla «u»
+    668 ms  tecla «s»
+    981 ms  GET /todos?q=delectus  -> 200 (933 ms)
+   => 8 pulsaciones, 1 peticion (313 ms despues de la ultima tecla). Mostrando 1–7 de 7 tareas (filtradas de 200)
+
+2. Escribir "qu", esperar y anadir "i" con la busqueda en vuelo:
+      7 ms  tecla «q»
+     88 ms  tecla «u»
+    397 ms  GET /todos?q=qu  -> CANCELADA (690 ms)
+    776 ms  tecla «i» (la búsqueda «qu» sigue en vuelo)
+   1087 ms  GET /todos?q=qui  -> 200 (949 ms)
+   => Mostrando 1–10 de 83 tareas (filtradas de 200)
+
+3. Filtros combinados: 0 peticiones. Alta: Mostrando 1–10 de 66 tareas (filtradas de 200); Alta + Pendientes: Mostrando 1–10 de 38 tareas (filtradas de 200); URL ?estado=pending&prioridad=high

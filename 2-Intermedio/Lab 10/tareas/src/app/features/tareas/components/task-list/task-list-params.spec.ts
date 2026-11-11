@@ -13,7 +13,7 @@ describe('task-list-params', () => {
       expect(read({ q: 'pan', estado: 'pending', usuario: '3', orden: 'title-asc', tam: '25', pag: '4' })).toEqual({
         search: 'pan',
         status: 'pending',
-        user: 3,
+        user: 3, priority: 'all',
         sort: 'title-asc',
         pageSize: 25,
         page: 4,
@@ -38,6 +38,7 @@ describe('task-list-params', () => {
         q: null,
         estado: null,
         usuario: null,
+        prioridad: null,
         orden: null,
         tam: null,
         pag: null,
@@ -45,12 +46,17 @@ describe('task-list-params', () => {
     });
 
     it('writes what differs from the defaults', () => {
-      const state: ListState = { search: ' pan ', status: 'completed', user: 2, sort: 'date-asc', pageSize: 'all', page: 3 };
-      expect(toParams(state)).toEqual({ q: 'pan', estado: 'completed', usuario: 2, orden: 'date-asc', tam: 'all', pag: 3 });
+      const state: ListState = { search: ' pan ', status: 'completed', user: 2, priority: 'all', sort: 'date-asc', pageSize: 'all', page: 3 };
+      expect(toParams(state)).toEqual({ q: 'pan', estado: 'completed', usuario: 2, prioridad: null, orden: 'date-asc', tam: 'all', pag: 3 });
+    });
+
+    it('writes the priority when it is not «all»', () => {
+      const state: ListState = { ...DEFAULT_LIST_STATE, priority: 'high' };
+      expect(toParams(state)['prioridad']).toBe('high');
     });
 
     it('round-trips through readParams', () => {
-      const state: ListState = { search: 'x', status: 'pending', user: 5, sort: 'status-done', pageSize: 50, page: 2 };
+      const state: ListState = { search: 'x', status: 'pending', user: 5, priority: 'all', sort: 'status-done', pageSize: 50, page: 2 };
       const params = Object.fromEntries(
         Object.entries(toParams(state))
           .filter(([, v]) => v !== null)

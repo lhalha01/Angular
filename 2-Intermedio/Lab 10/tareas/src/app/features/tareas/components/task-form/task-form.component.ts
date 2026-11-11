@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, Input, input, OnChanges, output, SimpleChanges } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
-import { TaskDraft } from '../../models/task.model';
+import { DEFAULT_PRIORITY, PRIORITIES, TaskDraft } from '../../models/task.model';
 import { UserService } from '@features/usuarios';
 
 /** Formulario reutilizado por "crear" y "editar" (template-driven con [(ngModel)]). */
@@ -48,6 +48,15 @@ import { UserService } from '@features/usuarios';
         }
       </div>
 
+      <div class="field">
+        <label for="priority">Prioridad</label>
+        <select id="priority" name="priority" [(ngModel)]="model.priority">
+          @for (p of priorities; track p.value) {
+            <option [ngValue]="p.value">{{ p.label }}</option>
+          }
+        </select>
+      </div>
+
       <div class="field field--inline">
         <label for="completed">Completado</label>
         <input id="completed" name="completed" type="checkbox" [(ngModel)]="model.completed" />
@@ -70,7 +79,8 @@ export class TaskFormComponent implements OnChanges {
   readonly cancelled = output<void>();
 
   protected readonly notBlank = /\S/;
-  protected model: TaskDraft = { title: '', userId: 1, completed: false };
+  protected readonly priorities = PRIORITIES;
+  protected model: TaskDraft = { title: '', userId: 1, completed: false, priority: DEFAULT_PRIORITY };
   /** Copia de los valores de partida, para saber si el usuario ha cambiado algo. */
   private initial: TaskDraft = { ...this.model };
   private wasSubmitted = false;
@@ -94,7 +104,8 @@ export class TaskFormComponent implements OnChanges {
     return (
       this.model.title !== this.initial.title ||
       this.model.userId !== this.initial.userId ||
-      this.model.completed !== this.initial.completed
+      this.model.completed !== this.initial.completed ||
+      this.model.priority !== this.initial.priority
     );
   }
 

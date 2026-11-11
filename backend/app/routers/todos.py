@@ -6,7 +6,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 
 from ..db import get_db, now_iso
-from ..schemas import TodoCreate, TodoIn, TodoOut, TodoPatch
+from ..schemas import Priority, TodoCreate, TodoIn, TodoOut, TodoPatch
 
 router = APIRouter(prefix="/todos", tags=["todos"])
 
@@ -23,6 +23,7 @@ def _to_todo(row: sqlite3.Row) -> dict[str, Any]:
         "title": row["title"],
         "completed": bool(row["completed"]),
         "createdAt": row["created_at"],
+        "priority": row["priority"],
     }
 
 
@@ -48,11 +49,12 @@ def list_todos(
     db: Db,
     user_id: Annotated[int | None, Query(alias="userId", ge=1)] = None,
     completed: bool | None = None,
+    priority: Priority | None = None,
     q: Annotated[str | None, Query(description="Busca en el título")] = None,
     page: Annotated[int | None, Query(alias="_page", ge=1)] = None,
     limit: Annotated[int | None, Query(alias="_limit", ge=1, le=200)] = None,
 ) -> list[dict[str, Any]]:
-    """Lista tareas, filtrando opcionalmente por `userId`, `completed` y `q`. Con `_page` y
+    """Lista tareas, filtrando opcionalmente por `userId`, `completed`, `priority` y `q`. Con `_page` y
     `_limit` pagina; `X-Total-Count` indica el total (ya filtrado, antes de paginar). Sin
     `_limit` devuelve todas."""
     conditions: list[str] = []
@@ -63,6 +65,9 @@ def list_todos(
     if completed is not None:
         conditions.append("completed = ?")
         params.append(int(completed))
+    if priority is not None:
+        conditions.append("priority = ?")
+        params.append(priority)
     if q and q.strip():
         conditions.append("title LIKE ?")
         params.append(f"%{q.strip()}%")
@@ -92,14 +97,15 @@ def create_todo(body: TodoCreate, db: Db) -> dict[str, Any]:
     if body.id is not None and db.execute("SELECT 1 FROM todos WHERE id = ?", (body.id,)).fetchone():
         raise HTTPException(status.HTTP_409_CONFLICT, f"El id {body.id} ya está en uso")
     cursor = db.execute(
-        "INSERT INTO todos (id, user_id, title, completed, created_at) "
-        "VALUES (:id, :user_id, :title, :completed, :created_at)",
+        "INSERT INTO todos (id, user_id, title, completed, created_at, priority) "
+        "VALUES (:id, :user_id, :title, :completed, :created_at, :priority)",
         {
             "id": body.id,
             "user_id": body.userId,
             "title": body.title,
             "completed": int(body.completed),
             "created_at": body.createdAt or now_iso(),
+            "priority": body.priority,
         },
     )
     return _fetch(db, cursor.lastrowid)
@@ -108,12 +114,14 @@ def create_todo(body: TodoCreate, db: Db) -> dict[str, Any]:
 @router.put("/{todo_id}", response_model=TodoOut)
 def replace_todo(todo_id: int, body: TodoIn, db: Db) -> dict[str, Any]:
     """Sustituye la tarea. La fecha de creación no cambia nunca (la gestiona el servidor), así que
-    si el cuerpo incluye `createdAt` se ignora."""
-    _fetch(db, todo_id)
+    si el cuerpo incluye `createdAt` se ignora. Si no incluye `priority` se conserva la actual (así un
+    cliente anterior a ese campo no la reinicia al guardar)."""
+    current = _fetch(db, todo_id)
     _ensure_user_exists(db, body.userId)
+    priority = body.priority if "priority" in body.model_fields_set else current["priority"]
     db.execute(
-        "UPDATE todos SET user_id = ?, title = ?, completed = ? WHERE id = ?",
-        (body.userId, body.title, int(body.completed), todo_id),
+        "UPDATE todos SET user_id = ?, title = ?, completed = ?, priority = ? WHERE id = ?",
+        (body.userId, body.title, int(body.completed), priority, todo_id),
     )
     return _fetch(db, todo_id)
 
@@ -129,15 +137,15 @@ def update_todo(todo_id: int, body: TodoPatch, db: Db) -> dict[str, Any]:
                 status.HTTP_422_UNPROCESSABLE_CONTENT, "El campo 'userId' no puede ser nulo"
             )
         _ensure_user_exists(db, changes["userId"])
-    for field in ("title", "completed"):
+    for field in ("title", "completed", "priority"):
         if field in changes and changes[field] is None:
             raise HTTPException(
                 status.HTTP_422_UNPROCESSABLE_CONTENT, f"El campo '{field}' no puede ser nulo"
             )
     merged = {**current, **changes}
     db.execute(
-        "UPDATE todos SET user_id = ?, title = ?, completed = ? WHERE id = ?",
-        (merged["userId"], merged["title"], int(merged["completed"]), todo_id),
+        "UPDATE todos SET user_id = ?, title = ?, completed = ?, priority = ? WHERE id = ?",
+        (merged["userId"], merged["title"], int(merged["completed"]), merged["priority"], todo_id),
     )
     return _fetch(db, todo_id)
 

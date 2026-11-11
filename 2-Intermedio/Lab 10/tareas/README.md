@@ -95,7 +95,7 @@ src/app
 │   ├── home/                   index.ts
 │   ├── tareas/                 index.ts + tareas.routes.ts (rutas /tasks y /add-task, cargadas con loadChildren)
 │   │   ├── models/             task.model.ts (Task, NewTask…, isTask)
-│   │   ├── mappers/            task.dto.ts, task.mapper.ts (DTO de la API ↔ dominio `Task`)
+│   │   ├── mappers/            task.dto.ts, task.mapper.ts (DTO de la API ↔ dominio `Task`; prioridad por defecto `medium`)
 │   │   ├── services/           task.service.ts, task-actions.service.ts (confirmar + modificar + avisar + Deshacer)
 │   │   ├── components/         task-list (pantalla; task-query.ts y task-list-params.ts son funciones puras),
 │   │   │                       task-card, task-toolbar, task-form, task-detail, task-edit, add-task
@@ -132,7 +132,7 @@ Alias de rutas (`tsconfig.json`): `@core/*`, `@shared/*` y `@features/*`. La arq
 - **Ciclo de vida**: `TaskFormComponent.ngOnChanges` reinicia el formulario con una copia cada vez que el padre pasa
   un valor inicial; `TaskListComponent.ngOnInit` lee los filtros de la URL; `ToastService.ngOnDestroy` cancela los
   temporizadores pendientes. El resto del estado reactivo usa signals y `effect()`, que se limpian solos.
-- **Pruebas**: `npm test` ejecuta 290 tests (cobertura ≈99 % de líneas: 99,55 %), incluida una prueba de integración
+- **Pruebas**: `npm test` ejecuta 322 tests (cobertura ≈99 % de líneas: 99,58 %), incluida una prueba de integración
   de las rutas reales. 40 de ellos cubren el modo del backend propio: ids y fechas del servidor, errores que
   llegan al usuario, "Deshacer" contra la API (incluido el 409) y los formularios de crear y editar.
 - **UserService** (servicio mock de `Servicios_mock.md`): listar, obtener por id, crear (POST) y eliminar (DELETE)
@@ -177,6 +177,7 @@ Alias de rutas (`tsconfig.json`): `@core/*`, `@shared/*` y `@features/*`. La arq
 | Arquitectura por features: `core/`, `shared/` y `features/{home,tareas,usuarios}` con barrels, alias `@core`, `@shared` y `@features`, rutas por feature (`loadChildren`), `NavbarComponent` en `core/layout`, regla de ESLint y `npm run check:architecture` | 12.2 |
 | Router profesional: pantalla de login, `AuthService` (token en `sessionStorage`), `authGuard` como `canMatch` y cabecera que reacciona a la sesión; el resolver y el guard de cambios sin guardar ya existían | 13.2 |
 | Capa HTTP: interceptores de autenticación y de errores (`withFetch`), reintentos con espera en la carga, DTO + mapper de tareas (`TaskDto`, `mapearTask`), contexto de cada petición (operación, errores esperados) y avisos de error centralizados; los componentes ya no gestionan los errores HTTP | 14.2 |
+| Búsqueda reactiva contra la API (`debounceTime` + `distinctUntilChanged` + `switchMap`), prioridad de la tarea (modelo, formulario, tarjeta, detalle y filtro, también en la URL) y protección de doble envío con `exhaustMap` en el alta y la edición | 15.2 |
 
 ### Diferencias del Lab 12.2 con su enunciado
 
@@ -208,6 +209,18 @@ Alias de rutas (`tsconfig.json`): `@core/*`, `@shared/*` y `@features/*`. La arq
 - **Un solo aviso por recurso aunque haya reintentos.** Cada reintento pasa de nuevo por el interceptor; no se repite un aviso que sigue visible. Con una limitación: el aviso sale en el **primer** fallo (el interceptor no sabe si habrá reintentos), así que si el reintento acierta se habrá mostrado un aviso innecesario.
 - **El 401 cierra la sesión y lleva al login** recordando la pantalla (`returnUrl`). El token es el opaco del Lab 13.2 y solo se envía a nuestra API.
 - **`withFetch()`** como pide el enunciado; no cambia nada visible.
+
+### Diferencias del Lab 15.2 con su enunciado
+
+- **La búsqueda la hace la API** (`GET /todos?q=`), con `debounceTime(300)` + `distinctUntilChanged` + `switchMap`: el texto se recorta y, si tiene menos de 2 caracteres, equivale a no buscar. El resultado son los **ids** de las tareas que coinciden, que se cruzan con las tareas **en memoria** (que son las que mandan): una tarea editada o borrada después de buscar se ve como está ahora, no como la devolvió la API. Mientras llega una búsqueda nueva se siguen viendo los resultados anteriores y el recuento dice «buscando…»; si falla, la lista se queda como estaba y el recuento dice «no se pudo buscar» (el aviso lo da el interceptor).
+- **Cambia una cosa que antes funcionaba:** la búsqueda local no distinguía tildes (`medico` encontraba «Médico»); la de la API, `LIKE` de SQLite, **no distingue mayúsculas pero sí tildes**. Y una tarea creada después de buscar no aparece en esos resultados hasta que se cambia el texto.
+- **La prioridad es real** (`Task.priority`: `high`, `medium` o `low`), con un campo nuevo en el backend (`todos.priority`, migración v3, decidido contigo). El formulario ofrece un selector, las tarjetas y el detalle la muestran, y la lista la filtra con un `computed` junto con el estado y el usuario (también en la URL: `?prioridad=`). Con la API pública (`npm run start:public`), que no tiene prioridad, el mapper deja todas en `medium`.
+- **Los filtros combinados no hacen peticiones**: estado, usuario y prioridad se aplican en el cliente sobre lo cargado, así que «cambiar filtros en rápida sucesión» solo recalcula la última combinación.
+- **`exhaustMap` también en la edición**, no solo en la creación que pide el enunciado: los envíos pasan por un `Subject` y los que llegan con uno en curso se ignoran. El error no termina el flujo (se captura dentro) y el aviso lo da el interceptor.
+- **Fase 4 (sin suscripciones manuales):** los `subscribe()` que quedan están en manejadores de eventos de peticiones HTTP de un solo uso (`TaskActions` y `reload`, que completan solos) o en los `Subject` de los formularios (cerrados con `takeUntilDestroyed()`). No hay `unsubscribe()` manual en el código nuevo. `ngOnInit` (`TaskListComponent`) y `ngOnDestroy` (`ToastService`) ya existían y no son suscripciones.
+- **Evidencia**: la captura de Network muestra la petición `GET /todos?q=qu` **cancelada** por el `switchMap` al llegar la siguiente; para que hubiera una petición en vuelo se simuló una latencia de 900 ms en el navegador. En lugar de un GIF hay una secuencia de capturas reales.
+
+Evidencias del Lab 15.2 en [`../../Lab 15/Lab 15.2/evidencias/`](../../Lab%2015/Lab%2015.2/evidencias/).
 
 Evidencias del Lab 14.2 en [`../../Lab 14/Lab 14.2/evidencias/`](../../Lab%2014/Lab%2014.2/evidencias/) (Network con la cabecera `Authorization` y la notificación de error en pantalla).
 

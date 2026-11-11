@@ -1,7 +1,7 @@
 import { isTask } from './task.model';
 
 describe('isTask', () => {
-  const valid = { id: 1, userId: 2, title: 'Comprar pan', completed: false };
+  const valid = { id: 1, userId: 2, title: 'Comprar pan', completed: false, priority: 'medium' };
 
   it('accepts a task, with or without the local createdAt field', () => {
     expect(isTask(valid)).toBeTrue();

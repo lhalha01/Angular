@@ -7,8 +7,8 @@ import { TaskService } from './task.service';
 
 const API = 'https://jsonplaceholder.typicode.com/todos';
 const seed: Task[] = [
-  { id: 1, userId: 1, title: 'uno', completed: false },
-  { id: 2, userId: 2, title: 'dos', completed: true },
+  { id: 1, userId: 1, title: 'uno', completed: false, priority: 'medium' },
+  { id: 2, userId: 2, title: 'dos', completed: true, priority: 'medium' },
 ];
 
 describe('TaskService', () => {
@@ -30,9 +30,9 @@ describe('TaskService', () => {
   });
 
   it('keeps unique local ids even though the API always answers id 201', () => {
-    service.addTask({ title: 'a', userId: 1, completed: false }).subscribe();
+    service.addTask({ title: 'a', userId: 1, completed: false, priority: 'medium' }).subscribe();
     http.expectOne({ method: 'POST', url: API }).flush({ id: 201 });
-    service.addTask({ title: 'b', userId: 1, completed: false }).subscribe();
+    service.addTask({ title: 'b', userId: 1, completed: false, priority: 'medium' }).subscribe();
     http.expectOne({ method: 'POST', url: API }).flush({ id: 201 });
 
     const ids = service.tasks().map((t) => t.id);
@@ -73,8 +73,8 @@ describe('TaskService with the own backend (persistentApi)', () => {
   const LOCAL = 'http://localhost:8000/todos';
   const original = { ...environment };
   const stored: Task[] = [
-    { id: 1, userId: 1, title: 'uno', completed: false, createdAt: '2026-01-01T00:00:01.000Z' },
-    { id: 2, userId: 2, title: 'dos', completed: true, createdAt: '2026-01-01T00:00:02.000Z' },
+    { id: 1, userId: 1, title: 'uno', completed: false, priority: 'medium', createdAt: '2026-01-01T00:00:01.000Z' },
+    { id: 2, userId: 2, title: 'dos', completed: true, priority: 'medium', createdAt: '2026-01-01T00:00:02.000Z' },
   ];
   let service: TaskService;
   let http: HttpTestingController;
@@ -105,7 +105,7 @@ describe('TaskService with the own backend (persistentApi)', () => {
 
   it('creates the task with the id and date the server answers, not local ones', () => {
     let created: Task | undefined;
-    service.addTask({ title: 'nueva', userId: 1, completed: false }).subscribe((t) => (created = t));
+    service.addTask({ title: 'nueva', userId: 1, completed: false, priority: 'medium' }).subscribe((t) => (created = t));
     const req = http.expectOne({ method: 'POST', url: LOCAL });
     expect('id' in req.request.body).toBeFalse(); // el id lo asigna el servidor
     expect(req.request.body).toEqual(jasmine.objectContaining({ title: 'nueva', userId: 1, completed: false }));
@@ -116,9 +116,9 @@ describe('TaskService with the own backend (persistentApi)', () => {
   });
 
   it('does not reuse the id of a deleted task: the server decides', () => {
-    service.addTask({ title: 'a', userId: 1, completed: false }).subscribe();
+    service.addTask({ title: 'a', userId: 1, completed: false, priority: 'medium' }).subscribe();
     http.expectOne({ method: 'POST', url: LOCAL }).flush({ id: 7, userId: 1, title: 'a', completed: false, createdAt: '2026-02-02T00:00:00.000Z' });
-    service.addTask({ title: 'b', userId: 1, completed: false }).subscribe();
+    service.addTask({ title: 'b', userId: 1, completed: false, priority: 'medium' }).subscribe();
     http.expectOne({ method: 'POST', url: LOCAL }).flush({ id: 8, userId: 1, title: 'b', completed: false, createdAt: '2026-02-02T00:00:01.000Z' });
     expect(service.tasks().map((t) => t.id)).toEqual([8, 7, 1, 2]);
   });

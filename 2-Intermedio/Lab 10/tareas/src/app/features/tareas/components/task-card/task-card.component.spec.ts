@@ -3,7 +3,7 @@ import { provideRouter } from '@angular/router';
 import { Task } from '../../models/task.model';
 import { TaskCardComponent } from './task-card.component';
 
-const TASK: Task = { id: 7, userId: 2, title: 'Estudiar Angular', completed: false, createdAt: '2024-03-05T10:00:00Z' };
+const TASK: Task = { id: 7, userId: 2, title: 'Estudiar Angular', completed: false, priority: 'medium', createdAt: '2024-03-05T10:00:00Z' };
 
 describe('TaskCardComponent', () => {
   function setup(task: Task = TASK, userName = 'Ervin Howell') {

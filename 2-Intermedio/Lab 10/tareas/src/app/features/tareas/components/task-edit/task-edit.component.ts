@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, input, viewChild } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
-import { errorYaNotificado } from '@core/http/error-notificado';
+import { EMPTY, Subject, catchError, exhaustMap, map } from 'rxjs';
 import { HasUnsavedChanges } from '@core/guards/unsaved-changes.guard';
 import { Task, TaskDraft } from '../../models/task.model';
 import { TaskService } from '../../services/task.service';
@@ -8,7 +9,11 @@ import { ToastService } from '@core/services/toast.service';
 import { StateMessageComponent } from '@shared/components/state-message/state-message.component';
 import { TaskFormComponent } from '../task-form/task-form.component';
 
-/** Ruta hija `/tasks/:id/edit`. La tarea la carga `taskResolver`; protegida por `unsavedChangesGuard`. */
+/**
+ * Ruta hija `/tasks/:id/edit`. La tarea la carga `taskResolver`; protegida por `unsavedChangesGuard`.
+ * Como en `AddTaskComponent`, los envíos pasan por un `Subject` con `exhaustMap` (sin doble guardado) y se cierran con
+ * `takeUntilDestroyed()`; el error HTTP lo avisa el interceptor y el formulario se queda como está para reintentar.
+ */
 @Component({
   selector: 'app-task-edit',
   imports: [TaskFormComponent, RouterLink, StateMessageComponent],
@@ -41,19 +46,26 @@ export class TaskEditComponent implements HasUnsavedChanges {
   /** Llega resuelta por la ruta (`null` si el id no existe). */
   readonly task = input.required<Task | null>();
 
+  private readonly save$ = new Subject<Task>();
+
+  constructor() {
+    this.save$
+      .pipe(
+        exhaustMap((task) => this.tasks.updateTask(task).pipe(map(() => task), catchError(() => EMPTY))),
+        takeUntilDestroyed(),
+      )
+      .subscribe((task) => {
+        this.toast.show(`Tarea #${task.id} actualizada`);
+        this.back(task);
+      });
+  }
+
   hasUnsavedChanges(): boolean {
     return this.form()?.hasUnsavedChanges() ?? false;
   }
 
   protected save(task: Task, draft: TaskDraft): void {
-    this.tasks.updateTask({ ...task, ...draft }).subscribe({
-      next: () => {
-        this.toast.show(`Tarea #${task.id} actualizada`);
-        this.back(task);
-      },
-      // El aviso del error lo muestra el interceptor; el formulario se queda como está para poder reintentar.
-      error: errorYaNotificado,
-    });
+    this.save$.next({ ...task, ...draft });
   }
 
   protected back(task: Task): void {

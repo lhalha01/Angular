@@ -6,7 +6,7 @@ import { Task } from '../../models/task.model';
 import { TaskDetailComponent } from './task-detail.component';
 
 const USERS_URL = 'https://jsonplaceholder.typicode.com/users';
-const TASK: Task = { id: 4, userId: 2, title: 'Estudiar Angular', completed: true, createdAt: '2024-03-05T10:00:00Z' };
+const TASK: Task = { id: 4, userId: 2, title: 'Estudiar Angular', completed: true, priority: 'medium', createdAt: '2024-03-05T10:00:00Z' };
 
 describe('TaskDetailComponent', () => {
   function setup(task: Task | null) {
@@ -27,7 +27,8 @@ describe('TaskDetailComponent', () => {
     expect(rows[0]).toContain('#4');
     expect(rows[1]).toContain('Ervin Howell');
     expect(rows[2]).toContain('Completada');
-    expect(rows[3]).toContain('2024'); // fecha en español
+    expect(rows[3]).toContain('Media');
+    expect(rows[4]).toContain('2024'); // fecha en español
   });
 
   it('highlights the user when the name starts with a vowel', () => {
@@ -36,7 +37,7 @@ describe('TaskDetailComponent', () => {
 
   it('does not show the date when the task has none', () => {
     const { el } = setup({ ...TASK, createdAt: undefined });
-    expect(el.querySelectorAll('.row').length).toBe(3);
+    expect(el.querySelectorAll('.row').length).toBe(4);
   });
 
   it('links back to the list and to the edit page', () => {

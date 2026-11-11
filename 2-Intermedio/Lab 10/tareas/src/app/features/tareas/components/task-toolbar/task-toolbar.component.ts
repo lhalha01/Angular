@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, model } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { TaskFilter } from '../../models/task.model';
+import { PRIORITIES, TaskFilter, TaskPriorityFilter } from '../../models/task.model';
 import { User } from '@features/usuarios';
 import { DEFAULT_SORT, SORTS, SortKey, ViewMode } from '../task-list/task-query';
 
@@ -39,6 +39,16 @@ import { DEFAULT_SORT, SORTS, SortKey, ViewMode } from '../task-list/task-query'
       </label>
 
       <label class="filter">
+        Filtrar por prioridad
+        <select [ngModel]="priority()" (ngModelChange)="priority.set($event)">
+          <option value="all">Todas</option>
+          @for (p of priorities; track p.value) {
+            <option [value]="p.value">{{ p.label }}</option>
+          }
+        </select>
+      </label>
+
+      <label class="filter">
         Ordenar por
         <select [ngModel]="sort()" (ngModelChange)="sort.set($event)">
           @for (s of sorts; track s.value) {
@@ -70,8 +80,10 @@ export class TaskToolbarComponent {
   readonly status = model<TaskFilter>('all');
   /** Id de usuario, o 'all'. */
   readonly user = model<number | 'all'>('all');
+  readonly priority = model<TaskPriorityFilter>('all');
   readonly sort = model<SortKey>(DEFAULT_SORT);
   readonly view = model<ViewMode>('cards');
 
   protected readonly sorts = SORTS;
+  protected readonly priorities = PRIORITIES;
 }

@@ -1,6 +1,6 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { TestBed } from '@angular/core/testing';
+import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { Task } from '../../models/task.model';
@@ -16,9 +16,9 @@ const USER_LIST = [
 ];
 
 const SMALL: Task[] = [
-  { id: 1, userId: 1, title: 'Comprar pan', completed: true, createdAt: '2024-01-03T00:00:00Z' },
-  { id: 2, userId: 1, title: 'Llamar al médico', completed: false, createdAt: '2024-01-02T00:00:00Z' },
-  { id: 3, userId: 2, title: 'Estudiar Angular', completed: true, createdAt: '2024-01-01T00:00:00Z' },
+  { id: 1, userId: 1, title: 'Comprar pan', completed: true, priority: 'medium', createdAt: '2024-01-03T00:00:00Z' },
+  { id: 2, userId: 1, title: 'Llamar al médico', completed: false, priority: 'medium', createdAt: '2024-01-02T00:00:00Z' },
+  { id: 3, userId: 2, title: 'Estudiar Angular', completed: true, priority: 'medium', createdAt: '2024-01-01T00:00:00Z' },
 ];
 
 describe('TaskListComponent', () => {
@@ -55,7 +55,14 @@ describe('TaskListComponent', () => {
       select.dispatchEvent(new Event('change'));
       fixture.detectChanges();
     };
-    return { fixture, el, http, ids, type, selectByLabel };
+    /** Teclea y espera la pausa de 300 ms (debounce); responde la búsqueda de la API con `resultados`. */
+    const search = (term: string, resultados: Task[]) => {
+      type(term);
+      tick(300);
+      http.expectOne((r) => r.url === TODOS && r.params.get('q') === term.trim()).flush(resultados);
+      fixture.detectChanges();
+    };
+    return { fixture, el, http, ids, type, selectByLabel, search };
   }
 
   describe('filters', () => {
@@ -76,38 +83,148 @@ describe('TaskListComponent', () => {
       expect(ids()).toEqual(['#2']);
     });
 
-    it('searches by title ignoring case and accents', () => {
-      const { ids, type } = setup();
-      type('MEDICO');
+    it('filters by priority', () => {
+      const { ids, selectByLabel } = setup([
+        { ...SMALL[0], priority: 'high' },
+        { ...SMALL[1], priority: 'low' },
+        { ...SMALL[2], priority: 'high' },
+      ]);
+      selectByLabel('Filtrar por prioridad', 'Alta');
+      expect(ids()).toEqual(['#1', '#3']);
+      selectByLabel('Filtrar por prioridad', 'Baja');
       expect(ids()).toEqual(['#2']);
-      type('angular');
-      expect(ids()).toEqual(['#3']);
+      selectByLabel('Filtrar por prioridad', 'Todas');
+      expect(ids().length).toBe(3);
     });
 
-    it('shows how many tasks match and lets the user clear the filters', () => {
-      const { el, fixture, ids, type } = setup();
+    it('combines priority with the other filters', () => {
+      const { ids, selectByLabel } = setup([
+        { ...SMALL[0], priority: 'high' }, // completada
+        { ...SMALL[1], priority: 'high' }, // pendiente
+        { ...SMALL[2], priority: 'low' },
+      ]);
+      selectByLabel('Filtrar por prioridad', 'Alta');
+      selectByLabel('Filtrar por estado', 'Pendientes');
+      expect(ids()).toEqual(['#2']);
+    });
+
+    it('shows the priority of every task', () => {
+      const { el } = setup([{ ...SMALL[0], priority: 'high' }, SMALL[1], { ...SMALL[2], priority: 'low' }]);
+      expect(Array.from(el.querySelectorAll('.priority')).map((p) => p.textContent?.trim())).toEqual(['Alta', 'Media', 'Baja']);
+    });
+
+    it('searches by title through the API, once the user pauses typing', fakeAsync(() => {
+      const { ids, type, http, fixture, search } = setup();
+      type('medico');
+      tick(299);
+      http.expectNone((r) => r.url === TODOS && r.params.has('q')); // aún no ha pasado la pausa
+      tick(1);
+      http.expectOne((r) => r.url === TODOS && r.params.get('q') === 'medico').flush([SMALL[1]]);
+      fixture.detectChanges();
+      expect(ids()).toEqual(['#2']);
+      search('angular', [SMALL[2]]);
+      expect(ids()).toEqual(['#3']);
+    }));
+
+    it('typing fast makes a single request, 300 ms after the last key', fakeAsync(() => {
+      const { type, http, fixture } = setup();
+      for (const text of ['pa', 'pan', 'pan ', 'pan c']) {
+        type(text);
+        tick(100);
+      }
+      http.expectNone((r) => r.url === TODOS && r.params.has('q'));
+      tick(200);
+      http.expectOne((r) => r.url === TODOS && r.params.get('q') === 'pan c').flush([]);
+      fixture.detectChanges();
+    }));
+
+    it('a search shorter than 2 characters is not a search: the whole list is shown, with no request', fakeAsync(() => {
+      const { ids, type, http } = setup();
+      type('p');
+      tick(400);
+      http.expectNone((r) => r.url === TODOS && r.params.has('q'));
+      expect(ids()).toEqual(['#1', '#2', '#3']);
+    }));
+
+    it('cancels the search in flight when a newer one starts (switchMap) and ignores its late answer', fakeAsync(() => {
+      const { ids, type, http, fixture } = setup();
+      type('an');
+      tick(300);
+      const vieja = http.expectOne((r) => r.url === TODOS && r.params.get('q') === 'an');
+      type('ang');
+      tick(300);
+      expect(vieja.cancelled).toBeTrue();
+      http.expectOne((r) => r.url === TODOS && r.params.get('q') === 'ang').flush([SMALL[2]]);
+      fixture.detectChanges();
+      expect(ids()).toEqual(['#3']);
+    }));
+
+    it('keeps the previous results while a new search is in flight and says it is searching', fakeAsync(() => {
+      const { el, ids, type, http, fixture, search } = setup();
+      search('pan', [SMALL[0]]);
+      type('pan c');
+      tick(300);
+      fixture.detectChanges();
+      expect(ids()).toEqual(['#1']); // los resultados anteriores siguen visibles
+      expect(el.querySelector('.count')?.textContent).toContain('buscando');
+      http.expectOne((r) => r.url === TODOS && r.params.get('q') === 'pan c').flush([]);
+      fixture.detectChanges();
+    }));
+
+    it('shows the in-memory task, not the one in the API answer (the in-memory data rules)', fakeAsync(() => {
+      const { ids, fixture, search } = setup();
+      search('pan', [{ ...SMALL[0], title: 'Dato viejo del servidor' }]);
+      expect(ids()).toEqual(['#1']);
+      expect((fixture.nativeElement as HTMLElement).textContent).toContain('COMPRAR PAN');
+    }));
+
+    it('if the search fails it keeps the list and says so (the error toast comes from the interceptor)', fakeAsync(() => {
+      const { el, ids, type, http, fixture } = setup();
+      type('pan');
+      tick(300);
+      http.expectOne((r) => r.url === TODOS && r.params.get('q') === 'pan').flush('', { status: 500, statusText: 'x' });
+      fixture.detectChanges();
+      expect(ids()).toEqual(['#1', '#2', '#3']);
+      expect(el.querySelector('.count')?.textContent).toContain('no se pudo buscar');
+    }));
+
+    it('shows how many tasks match and lets the user clear the filters', fakeAsync(() => {
+      const { el, fixture, ids, search } = setup();
       expect(el.querySelector('.link')).toBeNull(); // sin filtros no hay "Limpiar"
 
-      type('pan');
+      search('pan', [SMALL[0]]);
       expect(el.querySelector('.count')?.textContent).toContain('1–1 de 1 tareas (filtradas de 3)');
 
       el.querySelector<HTMLButtonElement>('.link')!.click();
       fixture.detectChanges();
+      tick(300); // la búsqueda vacía se aplica tras la pausa
+      fixture.detectChanges();
       expect(ids()).toEqual(['#1', '#2', '#3']);
       expect(el.querySelector('.link')).toBeNull();
+    }));
+
+    it('«Limpiar filtros» también quita la prioridad', () => {
+      const { el, fixture, ids, selectByLabel } = setup([{ ...SMALL[0], priority: 'high' }, SMALL[1], SMALL[2]]);
+      selectByLabel('Filtrar por prioridad', 'Alta');
+      expect(ids()).toEqual(['#1']);
+      el.querySelector<HTMLButtonElement>('.link')!.click();
+      fixture.detectChanges();
+      expect(ids().length).toBe(3);
     });
   });
 
   describe('empty states', () => {
-    it('offers to clear filters when nothing matches', () => {
-      const { el, fixture, ids, type } = setup();
-      type('zzz');
+    it('offers to clear filters when nothing matches', fakeAsync(() => {
+      const { el, fixture, ids, search } = setup();
+      search('zzz', []);
       expect(el.querySelector('.state')?.textContent).toContain('Ninguna tarea coincide');
 
       el.querySelector<HTMLButtonElement>('.state button')!.click();
       fixture.detectChanges();
+      tick(300);
+      fixture.detectChanges();
       expect(ids().length).toBe(3);
-    });
+    }));
 
     it('offers to create a task when there are none at all', () => {
       const { el } = setup([]);
@@ -157,7 +274,7 @@ describe('TaskListComponent', () => {
       id: i + 1,
       userId: 1,
       title: `tarea ${i + 1}`,
-      completed: false,
+      completed: false, priority: 'medium',
       createdAt: new Date(2024, 0, 1, 0, 30 - i).toISOString(), // id 1 = la más reciente
     }));
 
@@ -172,13 +289,13 @@ describe('TaskListComponent', () => {
       expect(el.querySelector('.pager')?.textContent).toContain('Página 2 de 3');
     });
 
-    it('goes back to page 1 when a filter changes', () => {
-      const { fixture, el, ids, type } = setup(many);
+    it('goes back to page 1 when a filter changes', fakeAsync(() => {
+      const { fixture, el, ids, search } = setup(many);
       el.querySelectorAll<HTMLButtonElement>('.pager button')[1].click();
       fixture.detectChanges();
-      type('tarea 2');
+      search('tarea 2', many.filter((t) => t.title.toLowerCase().includes('tarea 2')));
       expect(ids()[0]).toBe('#2');
-    });
+    }));
 
     it('lets the user choose the page size, including all', () => {
       const { fixture, el, ids } = setup(many);
@@ -286,8 +403,24 @@ describe('TaskListComponent', () => {
     });
 
     it('applies the search and the sort found in the URL', async () => {
-      const { ids } = await setupWithRoute('/tasks?q=angular&orden=title-desc');
+      const { ids, http, harness } = await setupWithRoute('/tasks?q=angular&orden=title-desc');
+      await new Promise((r) => setTimeout(r, 350)); // pausa del debounce
+      http.expectOne((r) => r.url === TODOS && r.params.get('q') === 'angular').flush([SMALL[2]]);
+      harness.detectChanges();
       expect(ids()).toEqual(['#3']);
+    });
+
+    it('applies the priority found in the URL', async () => {
+      const { ids } = await setupWithRoute('/tasks?prioridad=high', [{ ...SMALL[0], priority: 'high' }, SMALL[1], SMALL[2]]);
+      expect(ids()).toEqual(['#1']);
+    });
+
+    it('writes the priority to the URL as it changes', async () => {
+      const { harness, router, selectByLabel } = await setupWithRoute('/tasks');
+      selectByLabel('Filtrar por prioridad', 'Baja');
+      harness.detectChanges();
+      await harness.fixture.whenStable();
+      expect(router.url).toContain('prioridad=low');
     });
 
     it('ignores invalid values in the URL', async () => {
@@ -310,7 +443,7 @@ describe('TaskListComponent', () => {
         id: i + 1,
         userId: 1,
         title: `tarea ${i + 1}`,
-        completed: false,
+        completed: false, priority: 'medium',
         createdAt: new Date(2024, 0, 1, 0, 30 - i).toISOString(),
       }));
 
@@ -330,9 +463,13 @@ describe('TaskListComponent', () => {
       });
 
       it('goes back to page 1 when a filter changes after the initial page was restored', async () => {
-        const { ids, type, harness } = await setupWithRoute('/tasks?pag=3&tam=10', many);
+        const { ids, type, harness, http } = await setupWithRoute('/tasks?pag=3&tam=10', many);
         expect(ids()[0]).toBe('#21');
         type('tarea 1');
+        await new Promise((r) => setTimeout(r, 350)); // pausa del debounce
+        http
+          .expectOne((r) => r.url === TODOS && r.params.get('q') === 'tarea 1')
+          .flush(many.filter((t) => t.title.toLowerCase().includes('tarea 1')));
         harness.detectChanges();
         expect(ids()[0]).toBe('#1');
       });

@@ -1,7 +1,7 @@
 import { DatePipe, UpperCasePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Task } from '../../models/task.model';
+import { PRIORITIES, Task } from '../../models/task.model';
 import { HighlightUserDirective } from '@shared/directives/highlight-user.directive';
 import { TaskStatusPipe } from '@shared/pipes/task-status.pipe';
 
@@ -35,6 +35,7 @@ import { TaskStatusPipe } from '@shared/pipes/task-status.pipe';
     <div class="task-body">
       <p>Responsable: <span [appHighlightUser]="userName()">{{ userName() }}</span></p>
       <p>Creada: {{ t.createdAt | date: 'dd/MM/yyyy' }}</p>
+      <p>Prioridad: <span class="priority priority--{{ t.priority }}">{{ priorityLabel() }}</span></p>
     </div>
 
     <div class="actions">
@@ -53,6 +54,10 @@ import { TaskStatusPipe } from '@shared/pipes/task-status.pipe';
     .status:hover { filter: brightness(1.15); }
     .task-body { margin-top: 1rem; color: var(--text-muted); }
     .task-body p { margin: 0.25rem 0; }
+    .priority { display: inline-block; padding: 0.1rem 0.55rem; border-radius: 999px; color: #fff; font-size: 0.78rem; font-weight: 700; }
+    .priority--high { background: #b91c1c; }
+    .priority--medium { background: #b45309; }
+    .priority--low { background: #15803d; }
 
     /* Modo fila: la misma tarjeta, repartida en horizontal. */
     :host(.card--row) { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.5rem; padding: 0.75rem 1rem; }
@@ -68,6 +73,8 @@ export class TaskCardComponent {
   /** Nombre ya resuelto del responsable (la tarjeta no conoce el servicio de usuarios). */
   readonly userName = input.required<string>();
   readonly layout = input<'card' | 'row'>('card');
+
+  protected readonly priorityLabel = computed(() => PRIORITIES.find((p) => p.value === this.task().priority)?.label ?? '');
 
   readonly toggleStatus = output<void>();
   readonly edit = output<void>();

@@ -11,7 +11,7 @@ import { TaskEditComponent } from './task-edit.component';
 
 const TODOS = 'https://jsonplaceholder.typicode.com/todos';
 const USERS = 'https://jsonplaceholder.typicode.com/users';
-const TASK: Task = { id: 4, userId: 1, title: 'Estudiar Angular', completed: false, createdAt: '2024-03-05T10:00:00Z' };
+const TASK: Task = { id: 4, userId: 1, title: 'Estudiar Angular', completed: false, priority: 'medium', createdAt: '2024-03-05T10:00:00Z' };
 
 describe('TaskEditComponent', () => {
   async function setup(task: Task | null) {

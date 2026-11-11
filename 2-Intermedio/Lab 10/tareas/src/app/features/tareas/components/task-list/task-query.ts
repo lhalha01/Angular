@@ -1,4 +1,4 @@
-import { Task, TaskFilter } from '../../models/task.model';
+import { Task, TaskFilter, TaskPriorityFilter } from '../../models/task.model';
 
 export type ViewMode = 'cards' | 'list';
 export type SortKey = 'date-desc' | 'date-asc' | 'title-asc' | 'title-desc' | 'status-pending' | 'status-done';
@@ -9,6 +9,7 @@ export interface TaskQuery {
   status: TaskFilter;
   /** Id de usuario, o 'all'. */
   user: number | 'all';
+  priority: TaskPriorityFilter;
   sort: SortKey;
 }
 
@@ -23,7 +24,13 @@ export const SORTS: readonly { value: SortKey; label: string }[] = [
 
 export const DEFAULT_SORT: SortKey = 'date-desc';
 
-export const DEFAULT_QUERY: TaskQuery = { search: '', status: 'all', user: 'all', sort: DEFAULT_SORT };
+export const DEFAULT_QUERY: TaskQuery = { search: '', status: 'all', user: 'all', priority: 'all', sort: DEFAULT_SORT };
+
+/** Mínimo de caracteres para que un texto cuente como búsqueda (con menos se ve la lista completa). */
+export const MIN_SEARCH_LENGTH = 2;
+
+/** El texto de búsqueda que se aplica de verdad: recortado, o vacío si es demasiado corto. */
+export const effectiveSearch = (search: string): string => (search.trim().length >= MIN_SEARCH_LENGTH ? search.trim() : '');
 
 const time = (task: Task) => (task.createdAt ? Date.parse(task.createdAt) : 0);
 
@@ -45,9 +52,9 @@ export const normalize = (text: string): string =>
 
 /** ¿Hay algún filtro activo? (el orden no cuenta: no reduce los resultados). */
 export const hasActiveFilters = (query: TaskQuery): boolean =>
-  query.search.trim() !== '' || query.status !== 'all' || query.user !== 'all';
+  effectiveSearch(query.search) !== '' || query.status !== 'all' || query.user !== 'all' || query.priority !== 'all';
 
-/** Filtra por búsqueda, estado y usuario, y ordena. No modifica la lista original. */
+/** Filtra por búsqueda, estado, usuario y prioridad, y ordena. No modifica la lista original. */
 export function filterAndSort(tasks: readonly Task[], query: TaskQuery): Task[] {
   const text = normalize(query.search.trim());
   const compare = COMPARATORS[query.sort];
@@ -55,6 +62,7 @@ export function filterAndSort(tasks: readonly Task[], query: TaskQuery): Task[] 
     .filter(
       (task) =>
         (query.user === 'all' || task.userId === query.user) &&
+        (query.priority === 'all' || task.priority === query.priority) &&
         (query.status === 'all' || (query.status === 'completed') === task.completed) &&
         (text === '' || normalize(task.title).includes(text)),
     )

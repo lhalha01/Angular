@@ -1,6 +1,6 @@
 """Esquemas (validación y forma de las respuestas). Imitan el formato de JSONPlaceholder."""
 
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, StringConstraints
 
@@ -80,18 +80,24 @@ IsoDate = Annotated[
 ]
 
 
+# Prioridad de la tarea. En PUT, si el cuerpo no la incluye se conserva la actual (clientes anteriores).
+Priority = Literal["high", "medium", "low"]
+
+
 class TodoIn(BaseModel):
     """Cuerpo de PUT: tarea completa. Cualquier campo extra (p. ej. `createdAt`) se ignora."""
 
     userId: Annotated[int, Field(ge=1)]
     title: Title
     completed: bool = False
+    priority: Priority = "medium"
 
 
 class TodoPatch(BaseModel):
     userId: Annotated[int, Field(ge=1)] | None = None
     title: Title | None = None
     completed: bool | None = None
+    priority: Priority | None = None
 
 
 class TodoCreate(TodoIn):

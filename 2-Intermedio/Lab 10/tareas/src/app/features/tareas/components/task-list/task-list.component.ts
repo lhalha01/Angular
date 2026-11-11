@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, linkedSignal, OnInit, signal, untracked } from '@angular/core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { Task, TaskFilter } from '../../models/task.model';
+import { catchError, debounceTime, distinctUntilChanged, map, of, scan, startWith, switchMap } from 'rxjs';
+import { Task, TaskFilter, TaskPriorityFilter } from '../../models/task.model';
 import { StorageService } from '@core/services/storage.service';
 import { TaskService } from '../../services/task.service';
 import { UserService } from '@features/usuarios';
@@ -11,7 +13,13 @@ import { TaskActions } from '../../services/task-actions.service';
 import { TaskCardComponent } from '../task-card/task-card.component';
 import { TaskToolbarComponent } from '../task-toolbar/task-toolbar.component';
 import { DEFAULT_LIST_STATE, readParams, toParams } from './task-list-params';
-import { filterAndSort, hasActiveFilters, SortKey, TaskQuery, ViewMode } from './task-query';
+import { effectiveSearch, filterAndSort, hasActiveFilters, SortKey, TaskQuery, ViewMode } from './task-query';
+
+/** Resultado de la búsqueda en la API: `ids` son las tareas que coinciden, o `null` si no hay búsqueda que aplicar. */
+interface SearchState {
+  status: 'idle' | 'searching' | 'done' | 'error';
+  ids: ReadonlySet<number> | null;
+}
 
 const VIEW_KEY = 'taskView';
 const VIEWS: readonly ViewMode[] = ['cards', 'list'];
@@ -38,6 +46,7 @@ const VIEWS: readonly ViewMode[] = ['cards', 'list'];
           [(search)]="search"
           [(status)]="status"
           [(user)]="user"
+          [(priority)]="priority"
           [(sort)]="sort"
           [(view)]="view"
         />
@@ -66,7 +75,7 @@ const VIEWS: readonly ViewMode[] = ['cards', 'list'];
             </app-state-message>
           } @else {
             <div class="count-row">
-              <p class="count" aria-live="polite">{{ rangeLabel() }}</p>
+              <p class="count" aria-live="polite">{{ rangeLabel() }}@if (searchState().status === 'searching') { · buscando… } @else if (searchState().status === 'error') { · no se pudo buscar }</p>
               @if (filtersActive()) {
                 <button type="button" class="link" (click)="clearFilters()">Limpiar filtros</button>
               }
@@ -119,6 +128,7 @@ export class TaskListComponent implements OnInit {
   protected readonly search = signal(DEFAULT_LIST_STATE.search);
   protected readonly status = signal<TaskFilter>(DEFAULT_LIST_STATE.status);
   protected readonly user = signal<number | 'all'>(DEFAULT_LIST_STATE.user);
+  protected readonly priority = signal<TaskPriorityFilter>(DEFAULT_LIST_STATE.priority);
   protected readonly sort = signal<SortKey>(DEFAULT_LIST_STATE.sort);
   protected readonly pageSize = signal<PageSize>(DEFAULT_LIST_STATE.pageSize);
   protected readonly view = signal<ViewMode>(this.storage.getOneOf(VIEW_KEY, VIEWS) ?? 'cards');
@@ -127,8 +137,34 @@ export class TaskListComponent implements OnInit {
     search: this.search(),
     status: this.status(),
     user: this.user(),
+    priority: this.priority(),
     sort: this.sort(),
   }));
+
+  /**
+   * Búsqueda reactiva. El texto se recorta y, si es demasiado corto, equivale a no buscar; se espera 300 ms a que el
+   * usuario deje de teclear (`debounceTime`), no se repite el mismo término (`distinctUntilChanged`) y, si llega otro
+   * con una búsqueda en vuelo, esa se cancela (`switchMap`). Busca la API (`/todos?q=`); el resultado son los ids de
+   * las tareas que coinciden. Mientras llega una búsqueda nueva se conservan los ids de la anterior (la lista no parpadea).
+   */
+  protected readonly searchState = toSignal(
+    toObservable(this.search).pipe(
+      map((text) => effectiveSearch(text)),
+      debounceTime(300),
+      distinctUntilChanged(),
+      switchMap((term) =>
+        term === ''
+          ? of<SearchState>({ status: 'idle', ids: null })
+          : this.taskService.search(term).pipe(
+              map((tasks): SearchState => ({ status: 'done', ids: new Set(tasks.map((t) => t.id)) })),
+              catchError(() => of<SearchState>({ status: 'error', ids: null })), // el aviso lo da el interceptor
+              startWith<SearchState>({ status: 'searching', ids: null }),
+            ),
+      ),
+      scan((anterior, actual): SearchState => (actual.status === 'searching' ? { ...actual, ids: anterior.ids } : actual)),
+    ),
+    { initialValue: { status: 'idle', ids: null } as SearchState },
+  );
 
   /** Vuelve a la página 1 cada vez que cambia la consulta o el tamaño de página. */
   protected readonly page = linkedSignal<{ query: TaskQuery; size: PageSize }, number>({
@@ -136,7 +172,14 @@ export class TaskListComponent implements OnInit {
     computation: () => 1,
   });
 
-  protected readonly filtered = computed(() => filterAndSort(this.allTasks(), this.query()));
+  /** Las tareas de la API que coinciden con la búsqueda, cruzadas por id con las que hay en memoria (que son las que mandan). */
+  private readonly searched = computed(() => {
+    const ids = this.searchState().ids;
+    return ids === null ? this.allTasks() : this.allTasks().filter((task) => ids.has(task.id));
+  });
+
+  /** El texto lo aplica la API (arriba); aquí solo se filtra por estado, usuario y prioridad, y se ordena. */
+  protected readonly filtered = computed(() => filterAndSort(this.searched(), { ...this.query(), search: '' }));
   protected readonly paged = computed(() => paginate(this.filtered(), this.page(), this.pageSize()));
   protected readonly filtersActive = computed(() => hasActiveFilters(this.query()));
 
@@ -168,6 +211,7 @@ export class TaskListComponent implements OnInit {
     this.search.set(initial.search);
     this.status.set(initial.status);
     this.user.set(initial.user);
+    this.priority.set(initial.priority);
     this.sort.set(initial.sort);
     this.pageSize.set(initial.pageSize);
     this.page.set(initial.page);
@@ -177,11 +221,12 @@ export class TaskListComponent implements OnInit {
     return this.userService.nameOf(userId);
   }
 
-  /** Quita búsqueda, estado y usuario (se conservan orden, tamaño de página y vista). */
+  /** Quita búsqueda, estado, usuario y prioridad (se conservan orden, tamaño de página y vista). */
   protected clearFilters(): void {
     this.search.set('');
     this.status.set('all');
     this.user.set('all');
+    this.priority.set('all');
   }
 
   protected edit(task: Task): void {

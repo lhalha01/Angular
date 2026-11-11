@@ -1,5 +1,7 @@
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { HttpContext } from '@angular/common/http';
+import { map, Observable } from 'rxjs';
+import { OPERACION } from '@core/interceptors/http-context';
 import { environment } from '../../../../environments/environment';
 import { aTaskDto, leerTask } from '../mappers/task.mapper';
 import { Task, TaskDraft } from '../models/task.model';
@@ -31,6 +33,18 @@ export class TaskService extends InMemoryResource<Task> {
   constructor() {
     super();
     this.reload();
+  }
+
+  /**
+   * Busca por título en la API (`/todos?q=`, sin distinguir mayúsculas). Devuelve las tareas que coinciden, tal como
+   * están en el servidor: la lista las cruza por id con las que tiene en memoria, que son las que manda. Sin
+   * reintentos: si falla, el usuario puede volver a escribir.
+   */
+  search(term: string): Observable<Task[]> {
+    const context = new HttpContext().set(OPERACION, 'No se pudo buscar en las tareas');
+    return this.http
+      .get<unknown>(this.apiUrl, { params: { q: term.trim() }, context })
+      .pipe(map((body) => (Array.isArray(body) ? body.map((json) => this.fromApi(json)).filter((t): t is Task => t !== null) : [])));
   }
 
   getTaskById(id: number): Observable<Task | null> {

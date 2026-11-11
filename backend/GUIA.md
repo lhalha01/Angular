@@ -202,6 +202,7 @@ export interface Todo {
   title: string;
   completed: boolean;
   createdAt: string; // fecha ISO 8601 en UTC, la guarda el servidor
+  priority: 'high' | 'medium' | 'low'; // por defecto 'medium'
 }
 export type TodoDraft = Pick<Todo, 'userId' | 'title' | 'completed'>;
 
@@ -252,6 +253,7 @@ Se hace con parámetros en la URL (todos opcionales):
 | --- | --- | --- |
 | `userId` | `/todos?userId=2` | Solo las tareas de ese usuario |
 | `completed` | `/todos?completed=true` | Solo completadas (o `false`: pendientes) |
+| `priority` | `/todos?priority=high` | Solo las de esa prioridad (`high`, `medium` o `low`; otro valor → 422) |
 | `q` | `/todos?q=comprar` | Busca en el título (en `/users`, en nombre, usuario y email) |
 | `_page` y `_limit` | `/todos?_page=2&_limit=10` | Paginación (`_limit` máximo: 200 en tareas, 100 en usuarios) |
 

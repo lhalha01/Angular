@@ -12,9 +12,9 @@ import { TaskActions } from './task-actions.service';
 
 const TODOS = 'https://jsonplaceholder.typicode.com/todos';
 const SEED: Task[] = [
-  { id: 1, userId: 1, title: 'uno', completed: false },
-  { id: 2, userId: 1, title: 'dos', completed: true },
-  { id: 3, userId: 2, title: 'tres', completed: false },
+  { id: 1, userId: 1, title: 'uno', completed: false, priority: 'medium' },
+  { id: 2, userId: 1, title: 'dos', completed: true, priority: 'medium' },
+  { id: 3, userId: 2, title: 'tres', completed: false, priority: 'medium' },
 ];
 
 describe('TaskActions', () => {
@@ -96,7 +96,7 @@ describe('TaskActions', () => {
       http.expectOne({ method: 'DELETE', url: `${TODOS}/3` }).flush({});
       const undo = toast.toasts()[0];
 
-      tasks.addTask({ title: 'nueva', userId: 1, completed: false }).subscribe();
+      tasks.addTask({ title: 'nueva', userId: 1, completed: false, priority: 'medium' }).subscribe();
       http.expectOne({ method: 'POST', url: TODOS }).flush({});
       expect(ids(tasks)).toContain(3); // la nueva ha reutilizado el id 3
 

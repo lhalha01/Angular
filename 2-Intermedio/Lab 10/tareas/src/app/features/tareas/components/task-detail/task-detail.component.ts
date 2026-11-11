@@ -1,7 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Task } from '../../models/task.model';
+import { Priority, PRIORITIES, Task } from '../../models/task.model';
 import { UserService } from '@features/usuarios';
 import { HighlightUserDirective } from '@shared/directives/highlight-user.directive';
 import { TaskStatusPipe } from '@shared/pipes/task-status.pipe';
@@ -24,6 +24,7 @@ import { StateMessageComponent } from '@shared/components/state-message/state-me
           <strong [appHighlightUser]="userName(t.userId)">{{ userName(t.userId) }}</strong>
         </div>
         <div class="row"><span class="label">Estado</span><strong>{{ t.completed | taskStatus }}</strong></div>
+        <div class="row"><span class="label">Prioridad</span><strong>{{ priorityLabel(t.priority) }}</strong></div>
         @if (t.createdAt) {
           <div class="row"><span class="label">Creada</span><strong>{{ t.createdAt | date: 'fullDate' }}</strong></div>
         }
@@ -49,6 +50,10 @@ export class TaskDetailComponent {
 
   /** Llega resuelta por la ruta (`null` si el id no existe). */
   readonly task = input.required<Task | null>();
+
+  protected priorityLabel(priority: Priority): string {
+    return PRIORITIES.find((p) => p.value === priority)?.label ?? priority;
+  }
 
   protected userName(userId: number): string {
     return this.users.nameOf(userId);

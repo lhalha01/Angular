@@ -1,0 +1,17 @@
+Lab 15.1 TalentHub - Network: busqueda con debounce (recorrido real en Chrome contra el build de produccion)
+
+1. Teclear "howell" deprisa:
+      7 ms  tecla «h»
+     98 ms  tecla «o»
+    189 ms  tecla «w»
+    283 ms  tecla «e»
+    374 ms  tecla «l»
+    467 ms  tecla «l»
+    783 ms  GET /users?q=howell  -> 200
+   => 6 pulsaciones, 1 peticion (316 ms despues de la ultima tecla). Resultado: Ervin Howell
+
+2. Cambiar los filtros de rol y disponibilidad: 0 peticiones (se filtra en el cliente)
+
+3. Borrar la busqueda:
+     29 ms  se borra la búsqueda
+    356 ms  GET /users  -> 200

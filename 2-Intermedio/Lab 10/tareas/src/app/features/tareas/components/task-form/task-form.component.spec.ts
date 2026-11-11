@@ -95,7 +95,7 @@ describe('TaskFormComponent', () => {
   });
 
   it('starts from a copy of the initial value', async () => {
-    const initial: TaskDraft = { title: 'Original', userId: 2, completed: true };
+    const initial: TaskDraft = { title: 'Original', userId: 2, completed: true, priority: 'medium' };
     const { title, completed, typeTitle } = await setup({ value: initial });
     expect(title.value).toBe('Original');
     expect(completed.checked).toBeTrue();
@@ -114,7 +114,7 @@ describe('TaskFormComponent', () => {
     await fixture.whenStable();
 
     submit.click();
-    expect(saved).toHaveBeenCalledOnceWith({ title: 'Comprar pan', userId: 2, completed: true });
+    expect(saved).toHaveBeenCalledOnceWith({ title: 'Comprar pan', userId: 2, completed: true, priority: 'medium' });
   });
 
   it('does not emit anything when the form is invalid', async () => {
@@ -144,7 +144,7 @@ describe('TaskFormComponent', () => {
     });
 
     it('has none at the start when editing an existing task', async () => {
-      const { fixture } = await setup({ value: { title: 'Original', userId: 2, completed: true } });
+      const { fixture } = await setup({ value: { title: 'Original', userId: 2, completed: true, priority: 'medium' } });
       expect(fixture.componentInstance.hasUnsavedChanges()).toBeFalse();
     });
 
@@ -170,7 +170,7 @@ describe('TaskFormComponent', () => {
     });
 
     it('does not count a change that was undone', async () => {
-      const { fixture, typeTitle } = await setup({ value: { title: 'Original', userId: 1, completed: false } });
+      const { fixture, typeTitle } = await setup({ value: { title: 'Original', userId: 1, completed: false, priority: 'medium' } });
       await typeTitle('Otro');
       expect(fixture.componentInstance.hasUnsavedChanges()).toBeTrue();
       await typeTitle('Original');
@@ -212,7 +212,7 @@ describe('TaskFormComponent', () => {
 
   describe('ngOnChanges (initial value)', () => {
     it('restarts the form with a copy each time the parent passes a new value', async () => {
-      const { fixture, el, title, typeTitle } = await setup({ value: { title: 'Primera', userId: 1, completed: false } });
+      const { fixture, el, title, typeTitle } = await setup({ value: { title: 'Primera', userId: 1, completed: false, priority: 'medium' } });
       expect(title.value).toBe('Primera');
 
       await typeTitle('Editada a mano');
@@ -236,7 +236,7 @@ describe('TaskFormComponent', () => {
     });
 
     it('works on a copy: the object from the parent is never modified', async () => {
-      const parentValue = { title: 'Del padre', userId: 1, completed: false };
+      const parentValue = { title: 'Del padre', userId: 1, completed: false, priority: 'medium' as const };
       const { typeTitle } = await setup({ value: parentValue });
       await typeTitle('Cambiado en el formulario');
       expect(parentValue.title).toBe('Del padre');
