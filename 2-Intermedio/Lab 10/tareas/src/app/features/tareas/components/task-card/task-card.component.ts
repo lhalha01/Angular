@@ -36,6 +36,13 @@ import { TaskStatusPipe } from '@shared/pipes/task-status.pipe';
       <p>Responsable: <span [appHighlightUser]="userName()">{{ userName() }}</span></p>
       <p>Creada: {{ t.createdAt | date: 'dd/MM/yyyy' }}</p>
       <p>Prioridad: <span class="priority priority--{{ t.priority }}">{{ priorityLabel() }}</span></p>
+      @if (t.tags?.length) {
+        <p class="tags">
+          @for (tag of t.tags; track tag) {
+            <span class="tag">{{ tag }}</span>
+          }
+        </p>
+      }
     </div>
 
     <div class="actions">
@@ -58,6 +65,8 @@ import { TaskStatusPipe } from '@shared/pipes/task-status.pipe';
     .priority--high { background: #b91c1c; }
     .priority--medium { background: #b45309; }
     .priority--low { background: #15803d; }
+    .tags { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+    .tag { padding: 0.05rem 0.5rem; border-radius: 999px; background: var(--btn-secondary-bg); color: var(--btn-secondary-text); font-size: 0.76rem; }
 
     /* Modo fila: la misma tarjeta, repartida en horizontal. */
     :host(.card--row) { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.5rem; padding: 0.75rem 1rem; }

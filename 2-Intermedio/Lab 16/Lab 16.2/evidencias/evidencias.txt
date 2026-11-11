@@ -1,0 +1,6 @@
+Lab 16.2 Gestor de Tareas - Formulario de tarea con Reactive Forms (recorrido real en Chrome contra el build de produccion; no se guarda nada)
+
+Al empezar: 0 errores
+Al intentar enviar (titulo vacio, fin anterior al inicio): El título es obligatorio. | La fecha de fin no puede ser anterior a la de inicio. (boton activo: true)
+Formulario valido: 0 errores; fechas 2026-10-03 -> 2026-12-03
+Etiquetas: demo, angular, xxxxxxxxxxxx, (vacia) -> Máximo 20 caracteres. | Escribe la etiqueta o quítala. -> al quitar dos: demo, angular (0 errores)

@@ -112,6 +112,10 @@ def test_la_migracion_elimina_las_huerfanas_y_conserva_el_resto_intacto(db_path:
         "completed": True,
         "createdAt": "2026-01-01T00:00:02.000Z",  # la fecha original, sin tocar
         "priority": "medium",  # la migración añade la columna con su valor por defecto
+        "description": None,  # y las de planificación, vacías
+        "startDate": None,
+        "endDate": None,
+        "tags": [],
     }
     assert client.get("/users").headers["X-Total-Count"] == "2"  # los usuarios, intactos
 

@@ -1,0 +1,9 @@
+Lab 16.1 TalentHub - Formulario de alta con Reactive Forms (recorrido real en Chrome contra el build de produccion)
+
+Proyectos ofrecidos (API /todos): Sin proyecto | delectus aut autem | quis ut nam facilis et officia qui | fugiat veniam minus ...
+Errores con datos invalidos: Solo se admiten letras y espacios. | El email no tiene un formato válido.
+Comprobando el email visible durante la validacion asincrona: true
+Email duplicado (contiene "test"): Ese email ya está en uso.
+Habilidades: Angular, xxxxxxxxxxxx, Docker -> error: Máximo 30 caracteres. -> al quitar la del medio: Angular, Docker
+Error cruzado (no disponible sin proyecto): Un empleado que no está disponible debe tener un proyecto asignado.
+Al intentar enviar: Un empleado que no está disponible debe tener un proyecto asignado. (no se envia nada)

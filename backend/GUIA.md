@@ -203,6 +203,10 @@ export interface Todo {
   completed: boolean;
   createdAt: string; // fecha ISO 8601 en UTC, la guarda el servidor
   priority: 'high' | 'medium' | 'low'; // por defecto 'medium'
+  description: string | null; // hasta 500 caracteres
+  startDate: string | null;   // día ISO AAAA-MM-DD
+  endDate: string | null;     // no anterior a startDate
+  tags: string[];             // hasta 20 etiquetas de 1 a 20 caracteres
 }
 export type TodoDraft = Pick<Todo, 'userId' | 'title' | 'completed'>;
 

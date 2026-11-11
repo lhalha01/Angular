@@ -1,12 +1,13 @@
 """Recurso /todos (tareas). Compatible con el de JSONPlaceholder, pero con los cambios guardados."""
 
+import json
 import sqlite3
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 
 from ..db import get_db, now_iso
-from ..schemas import Priority, TodoCreate, TodoIn, TodoOut, TodoPatch
+from ..schemas import END_BEFORE_START, Priority, TodoCreate, TodoIn, TodoOut, TodoPatch, end_before_start
 
 router = APIRouter(prefix="/todos", tags=["todos"])
 
@@ -24,6 +25,10 @@ def _to_todo(row: sqlite3.Row) -> dict[str, Any]:
         "completed": bool(row["completed"]),
         "createdAt": row["created_at"],
         "priority": row["priority"],
+        "description": row["description"],
+        "startDate": row["start_date"],
+        "endDate": row["end_date"],
+        "tags": json.loads(row["tags"]),
     }
 
 
@@ -41,6 +46,12 @@ def _ensure_user_exists(db: sqlite3.Connection, user_id: int) -> None:
         raise HTTPException(
             status.HTTP_422_UNPROCESSABLE_CONTENT, f"El usuario {user_id} no existe"
         )
+
+
+def _ensure_dates_in_order(start: str | None, end: str | None) -> None:
+    """Comprueba el orden de las fechas cuando una viene del cuerpo y la otra de la tarea guardada."""
+    if end_before_start(start, end):
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, END_BEFORE_START)
 
 
 @router.get("", response_model=list[TodoOut])
@@ -97,8 +108,8 @@ def create_todo(body: TodoCreate, db: Db) -> dict[str, Any]:
     if body.id is not None and db.execute("SELECT 1 FROM todos WHERE id = ?", (body.id,)).fetchone():
         raise HTTPException(status.HTTP_409_CONFLICT, f"El id {body.id} ya está en uso")
     cursor = db.execute(
-        "INSERT INTO todos (id, user_id, title, completed, created_at, priority) "
-        "VALUES (:id, :user_id, :title, :completed, :created_at, :priority)",
+        "INSERT INTO todos (id, user_id, title, completed, created_at, priority, description, start_date, end_date, tags) "
+        "VALUES (:id, :user_id, :title, :completed, :created_at, :priority, :description, :start_date, :end_date, :tags)",
         {
             "id": body.id,
             "user_id": body.userId,
@@ -106,6 +117,10 @@ def create_todo(body: TodoCreate, db: Db) -> dict[str, Any]:
             "completed": int(body.completed),
             "created_at": body.createdAt or now_iso(),
             "priority": body.priority,
+            "description": body.description,
+            "start_date": body.startDate,
+            "end_date": body.endDate,
+            "tags": json.dumps(body.tags, ensure_ascii=False),
         },
     )
     return _fetch(db, cursor.lastrowid)
@@ -114,14 +129,30 @@ def create_todo(body: TodoCreate, db: Db) -> dict[str, Any]:
 @router.put("/{todo_id}", response_model=TodoOut)
 def replace_todo(todo_id: int, body: TodoIn, db: Db) -> dict[str, Any]:
     """Sustituye la tarea. La fecha de creación no cambia nunca (la gestiona el servidor), así que
-    si el cuerpo incluye `createdAt` se ignora. Si no incluye `priority` se conserva la actual (así un
-    cliente anterior a ese campo no la reinicia al guardar)."""
+    si el cuerpo incluye `createdAt` se ignora. Los campos opcionales que el cuerpo no incluya
+    (`priority`, `description`, `startDate`, `endDate`, `tags`) se conservan (así un cliente anterior a esos
+    campos no los reinicia al guardar); para borrarlos hay que enviarlos vacíos (`null` o `[]`)."""
     current = _fetch(db, todo_id)
     _ensure_user_exists(db, body.userId)
-    priority = body.priority if "priority" in body.model_fields_set else current["priority"]
+    kept = {
+        field: getattr(body, field) if field in body.model_fields_set else current[field]
+        for field in ("priority", "description", "startDate", "endDate", "tags")
+    }
+    _ensure_dates_in_order(kept["startDate"], kept["endDate"])  # una fecha enviada contra otra conservada
     db.execute(
-        "UPDATE todos SET user_id = ?, title = ?, completed = ?, priority = ? WHERE id = ?",
-        (body.userId, body.title, int(body.completed), priority, todo_id),
+        "UPDATE todos SET user_id = ?, title = ?, completed = ?, priority = ?, description = ?, "
+        "start_date = ?, end_date = ?, tags = ? WHERE id = ?",
+        (
+            body.userId,
+            body.title,
+            int(body.completed),
+            kept["priority"],
+            kept["description"],
+            kept["startDate"],
+            kept["endDate"],
+            json.dumps(kept["tags"], ensure_ascii=False),
+            todo_id,
+        ),
     )
     return _fetch(db, todo_id)
 
@@ -137,15 +168,27 @@ def update_todo(todo_id: int, body: TodoPatch, db: Db) -> dict[str, Any]:
                 status.HTTP_422_UNPROCESSABLE_CONTENT, "El campo 'userId' no puede ser nulo"
             )
         _ensure_user_exists(db, changes["userId"])
-    for field in ("title", "completed", "priority"):
+    for field in ("title", "completed", "priority", "tags"):
         if field in changes and changes[field] is None:
             raise HTTPException(
                 status.HTTP_422_UNPROCESSABLE_CONTENT, f"El campo '{field}' no puede ser nulo"
             )
     merged = {**current, **changes}
+    _ensure_dates_in_order(merged["startDate"], merged["endDate"])
     db.execute(
-        "UPDATE todos SET user_id = ?, title = ?, completed = ?, priority = ? WHERE id = ?",
-        (merged["userId"], merged["title"], int(merged["completed"]), merged["priority"], todo_id),
+        "UPDATE todos SET user_id = ?, title = ?, completed = ?, priority = ?, description = ?, "
+        "start_date = ?, end_date = ?, tags = ? WHERE id = ?",
+        (
+            merged["userId"],
+            merged["title"],
+            int(merged["completed"]),
+            merged["priority"],
+            merged["description"],
+            merged["startDate"],
+            merged["endDate"],
+            json.dumps(merged["tags"], ensure_ascii=False),
+            todo_id,
+        ),
     )
     return _fetch(db, todo_id)
 

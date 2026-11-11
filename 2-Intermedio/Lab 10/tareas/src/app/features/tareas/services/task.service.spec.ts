@@ -126,7 +126,7 @@ describe('TaskService with the own backend (persistentApi)', () => {
   it('updates with a PUT of the whole task and keeps what the server answers', () => {
     service.updateTask({ ...stored[0], completed: true }).subscribe();
     const req = http.expectOne({ method: 'PUT', url: `${LOCAL}/1` });
-    expect(req.request.body).toEqual({ ...stored[0], completed: true });
+    expect(req.request.body).toEqual({ ...stored[0], completed: true, ...{ description: null, startDate: null, endDate: null, tags: [] } });
     req.flush({ ...stored[0], completed: true });
     expect(service.tasks()[0].completed).toBeTrue();
   });
@@ -147,7 +147,7 @@ describe('TaskService with the own backend (persistentApi)', () => {
     let restored: boolean | undefined;
     service.restoreTask(stored[0], 0).subscribe((r) => (restored = r));
     const req = http.expectOne({ method: 'POST', url: LOCAL });
-    expect(req.request.body).toEqual(stored[0]); // su id y su fecha de creación originales
+    expect(req.request.body).toEqual({ ...stored[0], ...{ description: null, startDate: null, endDate: null, tags: [] } }); // su id y su fecha de creación originales
     req.flush(stored[0], { status: 201, statusText: 'Created' });
     expect(restored).toBeTrue();
     expect(service.tasks()).toEqual(stored);

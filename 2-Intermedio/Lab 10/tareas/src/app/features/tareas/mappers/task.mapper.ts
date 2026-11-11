@@ -15,6 +15,11 @@ export function mapearTask(dto: TaskDto): Task {
     title: dto.title,
     completed: dto.completed,
     priority: dto.priority ?? DEFAULT_PRIORITY,
+    // La planificación vacía (`null`, `[]`) no entra en el dominio: ausente = sin valor.
+    ...(dto.description && { description: dto.description }),
+    ...(dto.startDate && { startDate: dto.startDate }),
+    ...(dto.endDate && { endDate: dto.endDate }),
+    ...(dto.tags && dto.tags.length > 0 && { tags: dto.tags }),
     ...(dto.createdAt !== undefined && { createdAt: dto.createdAt }),
   };
 }
@@ -27,6 +32,10 @@ export function aTaskDto(task: Task, conId: boolean): TaskWriteDto {
     title: task.title,
     completed: task.completed,
     priority: task.priority,
+    description: task.description ?? null,
+    startDate: task.startDate ?? null,
+    endDate: task.endDate ?? null,
+    tags: task.tags ?? [],
     ...(task.createdAt !== undefined && { createdAt: task.createdAt }),
   };
 }
@@ -41,6 +50,10 @@ function esTaskDto(valor: unknown): valor is TaskDto {
     typeof v['title'] === 'string' &&
     typeof v['completed'] === 'boolean' &&
     (v['priority'] === undefined || isPriority(v['priority'])) &&
+    (v['description'] == null || typeof v['description'] === 'string') &&
+    (v['startDate'] == null || typeof v['startDate'] === 'string') &&
+    (v['endDate'] == null || typeof v['endDate'] === 'string') &&
+    (v['tags'] === undefined || (Array.isArray(v['tags']) && v['tags'].every((t) => typeof t === 'string'))) &&
     (v['createdAt'] === undefined || typeof v['createdAt'] === 'string')
   );
 }

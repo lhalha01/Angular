@@ -56,7 +56,7 @@ describe('AddTaskComponent', () => {
 
   it('goes back to the list when cancelled, without creating anything', async () => {
     const { el, http, navigate } = await setup();
-    el.querySelector<HTMLButtonElement>('button[type="button"]')!.click();
+    Array.from(el.querySelectorAll<HTMLButtonElement>('button[type="button"]')).find((b) => b.textContent?.includes('Cancelar'))!.click();
     expect(navigate).toHaveBeenCalledWith(['/tasks']);
     http.expectNone({ method: 'POST' });
   });

@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, inject, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
-import { EMPTY, Subject, catchError, exhaustMap } from 'rxjs';
+import { EMPTY, Subject, catchError, exhaustMap, finalize } from 'rxjs';
 import { HasUnsavedChanges } from '@core/guards/unsaved-changes.guard';
 import { TaskDraft } from '../../models/task.model';
 import { TaskService } from '../../services/task.service';
@@ -23,7 +23,7 @@ import { TaskFormComponent } from '../task-form/task-form.component';
     <section class="card card--narrow">
       <p class="eyebrow">Nueva tarea</p>
       <h2>Crear tarea</h2>
-      <app-task-form submitLabel="Guardar tarea" (saved)="create($event)" (cancelled)="back()" />
+      <app-task-form submitLabel="Guardar tarea" [saving]="saving()" (saved)="create($event)" (cancelled)="back()" />
     </section>
   `,
 })
@@ -33,12 +33,21 @@ export class AddTaskComponent implements HasUnsavedChanges {
   private readonly toast = inject(ToastService);
   private readonly form = viewChild.required(TaskFormComponent);
 
+  /** Hay un guardado en curso: el formulario desactiva su botón mientras tanto. */
+  protected readonly saving = signal(false);
+
   private readonly create$ = new Subject<TaskDraft>();
 
   constructor() {
     this.create$
       .pipe(
-        exhaustMap((draft) => this.tasks.addTask(draft).pipe(catchError(() => EMPTY))),
+        exhaustMap((draft) => {
+          this.saving.set(true);
+          return this.tasks.addTask(draft).pipe(
+            catchError(() => EMPTY),
+            finalize(() => this.saving.set(false)),
+          );
+        }),
         takeUntilDestroyed(),
       )
       .subscribe((task) => {

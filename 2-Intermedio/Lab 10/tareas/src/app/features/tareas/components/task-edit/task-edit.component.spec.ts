@@ -60,7 +60,7 @@ describe('TaskEditComponent', () => {
 
   it('goes back to the detail page when cancelled, without saving', async () => {
     const { el, http, navigate } = await setup(TASK);
-    el.querySelector<HTMLButtonElement>('button[type="button"]')!.click();
+    Array.from(el.querySelectorAll<HTMLButtonElement>('button[type="button"]')).find((b) => b.textContent?.includes('Cancelar'))!.click();
     expect(navigate).toHaveBeenCalledWith(['/tasks', 4]);
     http.expectNone({ method: 'PUT' });
   });

@@ -90,7 +90,8 @@ src/app
 ├── shared/                     piezas reutilizables sin lógica de negocio; no depende de features
 │   ├── components/             paginator (+ paginate(), lógica pura), state-message, confirm-dialog (<dialog>), toast
 │   ├── directives/             appHighlightUser
-│   └── pipes/                  taskStatus
+│   ├── pipes/                  taskStatus
+│   └── validators/             date-range (validador cruzado de fechas: el fin no puede ser anterior al inicio)
 ├── features/                   cada feature se importa solo por su barrel (`@features/<feature>`)
 │   ├── home/                   index.ts
 │   ├── tareas/                 index.ts + tareas.routes.ts (rutas /tasks y /add-task, cargadas con loadChildren)
@@ -132,7 +133,7 @@ Alias de rutas (`tsconfig.json`): `@core/*`, `@shared/*` y `@features/*`. La arq
 - **Ciclo de vida**: `TaskFormComponent.ngOnChanges` reinicia el formulario con una copia cada vez que el padre pasa
   un valor inicial; `TaskListComponent.ngOnInit` lee los filtros de la URL; `ToastService.ngOnDestroy` cancela los
   temporizadores pendientes. El resto del estado reactivo usa signals y `effect()`, que se limpian solos.
-- **Pruebas**: `npm test` ejecuta 322 tests (cobertura ≈99 % de líneas: 99,58 %), incluida una prueba de integración
+- **Pruebas**: `npm test` ejecuta 364 tests (cobertura ≈99 % de líneas: 99,62 %), incluida una prueba de integración
   de las rutas reales. 40 de ellos cubren el modo del backend propio: ids y fechas del servidor, errores que
   llegan al usuario, "Deshacer" contra la API (incluido el 409) y los formularios de crear y editar.
 - **UserService** (servicio mock de `Servicios_mock.md`): listar, obtener por id, crear (POST) y eliminar (DELETE)
@@ -140,8 +141,9 @@ Alias de rutas (`tsconfig.json`): `@core/*`, `@shared/*` y `@features/*`. La arq
 - **Directiva** `appHighlightUser`: resalta nombres que empiezan por vocal (admite tildes).
 - **Pipe** `taskStatus`: `Completada ✅` / `Pendiente ⏳`; además se usan `uppercase` y `date` (locale `es`).
 - **ConfirmService / ToastService**: diálogo modal (`<dialog>`) y avisos propios, en lugar de `window.confirm`.
-- **Formulario**: template-driven con `[(ngModel)]` y validaciones (título obligatorio, 3–120 caracteres y
-  no en blanco; usuario obligatorio elegido de la lista).
+- **Formulario**: Reactive Forms (Lab 16.2) con validaciones (título obligatorio, 3–120 caracteres y no en blanco;
+  usuario obligatorio elegido de la lista; descripción de hasta 500 caracteres; fecha de fin no anterior a la de inicio;
+  etiquetas de hasta 20 caracteres, como mucho 20).
 
 ## Versiones y seguridad de dependencias
 
@@ -178,6 +180,7 @@ Alias de rutas (`tsconfig.json`): `@core/*`, `@shared/*` y `@features/*`. La arq
 | Router profesional: pantalla de login, `AuthService` (token en `sessionStorage`), `authGuard` como `canMatch` y cabecera que reacciona a la sesión; el resolver y el guard de cambios sin guardar ya existían | 13.2 |
 | Capa HTTP: interceptores de autenticación y de errores (`withFetch`), reintentos con espera en la carga, DTO + mapper de tareas (`TaskDto`, `mapearTask`), contexto de cada petición (operación, errores esperados) y avisos de error centralizados; los componentes ya no gestionan los errores HTTP | 14.2 |
 | Búsqueda reactiva contra la API (`debounceTime` + `distinctUntilChanged` + `switchMap`), prioridad de la tarea (modelo, formulario, tarjeta, detalle y filtro, también en la URL) y protección de doble envío con `exhaustMap` en el alta y la edición | 15.2 |
+| Formulario de tarea con **Reactive Forms** (`FormBuilder`, `FormArray` de etiquetas, validador cruzado de fechas) y los campos nuevos `description`, `startDate`, `endDate` y `tags` (backend v4): modelo, DTO, mapper, tarjeta, detalle y botón desactivado mientras se guarda | 16.2 |
 
 ### Diferencias del Lab 12.2 con su enunciado
 
@@ -219,6 +222,18 @@ Alias de rutas (`tsconfig.json`): `@core/*`, `@shared/*` y `@features/*`. La arq
 - **`exhaustMap` también en la edición**, no solo en la creación que pide el enunciado: los envíos pasan por un `Subject` y los que llegan con uno en curso se ignoran. El error no termina el flujo (se captura dentro) y el aviso lo da el interceptor.
 - **Fase 4 (sin suscripciones manuales):** los `subscribe()` que quedan están en manejadores de eventos de peticiones HTTP de un solo uso (`TaskActions` y `reload`, que completan solos) o en los `Subject` de los formularios (cerrados con `takeUntilDestroyed()`). No hay `unsubscribe()` manual en el código nuevo. `ngOnInit` (`TaskListComponent`) y `ngOnDestroy` (`ToastService`) ya existían y no son suscripciones.
 - **Evidencia**: la captura de Network muestra la petición `GET /todos?q=qu` **cancelada** por el `switchMap` al llegar la siguiente; para que hubiera una petición en vuelo se simuló una latencia de 900 ms en el navegador. En lugar de un GIF hay una secuencia de capturas reales.
+
+### Diferencias del Lab 16.2 con su enunciado
+
+- **Cuatro campos nuevos en el backend** (decidido contigo): `description`, `startDate`, `endDate` y `tags` (migración v4 de `todos`, validación en el servidor con las mismas reglas que el formulario y 28 tests). Son opcionales, así que el Lab 10 y el 10.1 de `1-Basico` siguen funcionando. En el dominio (`Task`) siguen los nombres en inglés (`description`, `startDate`, `endDate`, `tags`), no `descripcion`, `fechaInicio`, `fechaFin` y `etiquetas`; los campos vacíos no entran en el dominio (ausente = sin valor). Con la API pública (`npm run start:public`) estos campos no existen y no se guardan.
+- **El formulario ya existía** (template-driven, del Lab 10) y se ha **convertido** a Reactive Forms en lugar de crear un `FormularioTarea` nuevo: sigue siendo reutilizado por «crear» y «editar», con el mismo contrato (`value`, `saved`, `cancelled`, `hasUnsavedChanges()`) y los mismos `id` de los campos.
+- **El botón de guardar ya no se desactiva por estar inválido** (antes sí): un botón desactivado impide ver los errores al pulsarlo. Se desactiva mientras el padre guarda (`saving`, que ponen `AddTaskComponent` y `TaskEditComponent` con `finalize` sobre el `exhaustMap`), como pide la Fase 4. No se usa `markAllAsTouched` + `enviando` dentro del formulario porque él no hace la petición: la hace el padre.
+- **La validación de fechas permite el mismo día** (el enunciado compara con `>` y su mensaje dice «posterior»): una tarea de un solo día es lo normal. El validador es genérico (`dateRange(startKey, endKey)`, en `shared/validators/`) y el error es del grupo (`endBeforeStart`), no de un campo.
+- **Etiquetas:** `FormArray` de controles con `required`, sin espacios en blanco y `maxLength(20)`; como mucho 20 por tarea (límite del servidor). El enunciado solo pide `required` y `maxLength(20)`.
+- **Al editar, vaciar un opcional lo borra**: el formulario emite los campos vacíos como `undefined` explícito (para que `{ ...task, ...draft }` los quite) y el mapper envía `null` y `[]`; el `PUT` del servidor conserva lo que no se envíe, pero lo que se envía vacío se borra.
+- **No se guarda nada con la API pública**, y el recorrido de las capturas no escribe en la base de datos.
+
+Evidencias del Lab 16.2 en [`../../Lab 16/Lab 16.2/evidencias/`](../../Lab%2016/Lab%2016.2/evidencias/) (errores visibles, formulario sin errores y `FormArray` de etiquetas en uso).
 
 Evidencias del Lab 15.2 en [`../../Lab 15/Lab 15.2/evidencias/`](../../Lab%2015/Lab%2015.2/evidencias/).
 

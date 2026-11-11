@@ -40,7 +40,11 @@ TODOS_COLUMNS = """
     title      TEXT NOT NULL,
     completed  INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL,  -- ISO 8601 en UTC, p. ej. 2026-11-11T09:30:00.000Z
-    priority   TEXT NOT NULL DEFAULT 'medium' CHECK (priority IN ('high', 'medium', 'low'))
+    priority   TEXT NOT NULL DEFAULT 'medium' CHECK (priority IN ('high', 'medium', 'low')),
+    description TEXT,                      -- opcional
+    start_date TEXT,                       -- opcional: día ISO (AAAA-MM-DD)
+    end_date   TEXT,                       -- opcional: día ISO (AAAA-MM-DD), no anterior al de inicio
+    tags       TEXT NOT NULL DEFAULT '[]'  -- lista JSON de etiquetas
 """
 
 TODOS_SCHEMA = f"""
@@ -51,7 +55,8 @@ CREATE INDEX idx_todos_user_id ON todos (user_id);
 # Versión del esquema (PRAGMA user_version). Las bases de datos anteriores valen 0.
 #   2: `todos.user_id` pasa a ser una clave foránea hacia `users` con borrado en cascada.
 #   3: `todos.priority` ('high' | 'medium' | 'low', por defecto 'medium').
-SCHEMA_VERSION = 3
+#   4: `todos.description`, `todos.start_date`, `todos.end_date` y `todos.tags` (todas opcionales).
+SCHEMA_VERSION = 4
 
 # Prioridad de las tareas iniciales: se reparte según el id (1 → media, 2 → baja, 0 → alta) para que el
 # filtro por prioridad tenga algo que filtrar en los datos de ejemplo.
@@ -179,6 +184,29 @@ def _migrate_todos_add_priority(conn: sqlite3.Connection) -> bool:
     return True
 
 
+PLANNING_COLUMNS = {
+    "description": "description TEXT",
+    "start_date": "start_date TEXT",
+    "end_date": "end_date TEXT",
+    "tags": "tags TEXT NOT NULL DEFAULT '[]'",
+}
+
+
+def _migrate_todos_add_planning(conn: sqlite3.Connection) -> list[str]:
+    """Esquema 3 → 4: añade `description`, `start_date`, `end_date` y `tags` a `todos`.
+
+    Las tareas existentes quedan sin descripción ni fechas y con la lista de etiquetas vacía. Solo se añaden
+    las columnas que falten (una tabla recién creada o reconstruida ya las trae). Devuelve las añadidas.
+    """
+    existing = {row["name"] for row in conn.execute("PRAGMA table_info(todos)")}
+    added = []
+    for name, definition in PLANNING_COLUMNS.items():
+        if name not in existing:
+            conn.execute(f"ALTER TABLE todos ADD COLUMN {definition}")
+            added.append(name)
+    return added
+
+
 def init_db(db_path: Path) -> None:
     """Crea las tablas que falten, carga los datos iniciales de **cada tabla nueva** y migra el
     esquema de una base de datos anterior.
@@ -206,6 +234,7 @@ def init_db(db_path: Path) -> None:
             if "todos" in existing:
                 removed = _migrate_todos_add_foreign_key(conn) if version < 2 else 0
                 _migrate_todos_add_priority(conn)
+                _migrate_todos_add_planning(conn)
                 if removed:
                     logger.warning(
                         "Migración de la base de datos: se eliminaron %d tareas huérfanas "

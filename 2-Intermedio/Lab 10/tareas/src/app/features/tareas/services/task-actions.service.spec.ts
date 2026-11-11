@@ -191,7 +191,7 @@ describe('TaskActions with the own backend (persistentApi)', () => {
         const { http, tasks, toast, undo } = await removeAndGetUndo();
         toast.runAction(undo);
         const req = http.expectOne({ method: 'POST', url: LOCAL });
-        expect(req.request.body).toEqual(STORED[1]);
+        expect(req.request.body).toEqual({ ...STORED[1], ...{ description: null, startDate: null, endDate: null, tags: [] } });
         req.flush(STORED[1], { status: 201, statusText: 'Created' });
 
         expect(tasks.tasks().map((t) => t.id)).toEqual([1, 2, 3]);

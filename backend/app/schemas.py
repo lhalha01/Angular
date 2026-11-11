@@ -1,8 +1,9 @@
 """Esquemas (validación y forma de las respuestas). Imitan el formato de JSONPlaceholder."""
 
+from datetime import date
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field, StringConstraints
+from pydantic import BaseModel, Field, StringConstraints, field_validator, model_validator
 
 Text120 = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)]
 # Comprobación de formato básica (sin dependencias extra); la validación completa de un
@@ -83,6 +84,26 @@ IsoDate = Annotated[
 # Prioridad de la tarea. En PUT, si el cuerpo no la incluye se conserva la actual (clientes anteriores).
 Priority = Literal["high", "medium", "low"]
 
+# Planificación opcional de la tarea: descripción, fechas (día ISO, AAAA-MM-DD) y etiquetas. Igual que la
+# prioridad, en PUT lo que el cuerpo no incluya se conserva; para borrarlo hay que enviarlo vacío (`null`, `[]`).
+Description = Annotated[str, StringConstraints(strip_whitespace=True, max_length=500)]
+IsoDay = Annotated[str, StringConstraints(pattern=r"^\d{4}-\d{2}-\d{2}$")]
+Tag = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=20)]
+Tags = Annotated[list[Tag], Field(max_length=20)]
+
+END_BEFORE_START = "La fecha de fin no puede ser anterior a la de inicio"
+
+
+def check_day(value: str | None) -> str | None:
+    """Un día ISO debe existir de verdad (no vale 2026-02-30)."""
+    if value is not None:
+        date.fromisoformat(value)
+    return value
+
+
+def end_before_start(start: str | None, end: str | None) -> bool:
+    return start is not None and end is not None and end < start  # los días ISO se ordenan como texto
+
 
 class TodoIn(BaseModel):
     """Cuerpo de PUT: tarea completa. Cualquier campo extra (p. ej. `createdAt`) se ignora."""
@@ -91,6 +112,26 @@ class TodoIn(BaseModel):
     title: Title
     completed: bool = False
     priority: Priority = "medium"
+    description: Description | None = None
+    startDate: IsoDay | None = None
+    endDate: IsoDay | None = None
+    tags: Tags = []
+
+    @field_validator("startDate", "endDate")
+    @classmethod
+    def _real_day(cls, value: str | None) -> str | None:
+        return check_day(value)
+
+    @field_validator("description")
+    @classmethod
+    def _blank_is_none(cls, value: str | None) -> str | None:
+        return value or None
+
+    @model_validator(mode="after")
+    def _dates_in_order(self) -> "TodoIn":
+        if end_before_start(self.startDate, self.endDate):
+            raise ValueError(END_BEFORE_START)
+        return self
 
 
 class TodoPatch(BaseModel):
@@ -98,6 +139,20 @@ class TodoPatch(BaseModel):
     title: Title | None = None
     completed: bool | None = None
     priority: Priority | None = None
+    description: Description | None = None
+    startDate: IsoDay | None = None
+    endDate: IsoDay | None = None
+    tags: Tags | None = None
+
+    @field_validator("startDate", "endDate")
+    @classmethod
+    def _real_day(cls, value: str | None) -> str | None:
+        return check_day(value)
+
+    @field_validator("description")
+    @classmethod
+    def _blank_is_none(cls, value: str | None) -> str | None:
+        return value or None
 
 
 class TodoCreate(TodoIn):

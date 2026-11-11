@@ -1,4 +1,4 @@
-"""Prioridad de las tareas (`priority`: 'high' | 'medium' | 'low', por defecto 'medium'). Esquema v3."""
+"""Prioridad de las tareas (`priority`: 'high' | 'medium' | 'low', por defecto 'medium'). Esquema v3 (la columna sigue en el v4)."""
 
 import json
 import sqlite3
@@ -159,7 +159,7 @@ class TestMigracion:
         make_v2_db(db_path)
         init_db(db_path)
         conn = sqlite3.connect(db_path)
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION == 3
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
         conn.close()
         client = TestClient(create_app(db_path))
         client.patch("/todos/1", json={"priority": "high"})
