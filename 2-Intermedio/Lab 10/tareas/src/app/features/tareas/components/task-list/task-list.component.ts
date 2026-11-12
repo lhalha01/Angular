@@ -4,12 +4,11 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, debounceTime, distinctUntilChanged, map, of, scan, startWith, switchMap } from 'rxjs';
 import { Task, TaskFilter, TaskPriorityFilter } from '../../models/task.model';
 import { StorageService } from '@core/services/storage.service';
-import { TaskService } from '../../services/task.service';
+import { TasksFacade } from '../../services/tasks.facade';
 import { UserService } from '@features/usuarios';
 import { PaginatorComponent } from '@shared/components/paginator/paginator.component';
 import { PageSize, paginate } from '@shared/components/paginator/pagination';
 import { StateMessageComponent } from '@shared/components/state-message/state-message.component';
-import { TaskActions } from '../../services/task-actions.service';
 import { TaskCardComponent } from '../task-card/task-card.component';
 import { TaskToolbarComponent } from '../task-toolbar/task-toolbar.component';
 import { DEFAULT_LIST_STATE, readParams, toParams } from './task-list-params';
@@ -87,9 +86,9 @@ const VIEWS: readonly ViewMode[] = ['cards', 'list'];
                   [task]="task"
                   [userName]="userName(task.userId)"
                   [layout]="view() === 'list' ? 'row' : 'card'"
-                  (toggleStatus)="actions.toggleCompleted(task)"
+                  (toggleStatus)="facade.toggleCompleted(task)"
                   (edit)="edit(task)"
-                  (remove)="actions.remove(task)"
+                  (remove)="facade.remove(task)"
                 />
               }
             </div>
@@ -112,15 +111,14 @@ const VIEWS: readonly ViewMode[] = ['cards', 'list'];
   `,
 })
 export class TaskListComponent implements OnInit {
-  private readonly taskService = inject(TaskService);
+  protected readonly facade = inject(TasksFacade);
   private readonly userService = inject(UserService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly storage = inject(StorageService);
-  protected readonly actions = inject(TaskActions);
 
-  protected readonly loadStatus = this.taskService.status;
-  protected readonly allTasks = this.taskService.tasks;
+  protected readonly loadStatus = this.facade.status;
+  protected readonly allTasks = this.facade.tasks;
   protected readonly users = this.userService.users;
 
   // Estado de la consulta (cada señal se enlaza con la barra de filtros mediante [(…)]).
@@ -155,7 +153,7 @@ export class TaskListComponent implements OnInit {
       switchMap((term) =>
         term === ''
           ? of<SearchState>({ status: 'idle', ids: null })
-          : this.taskService.search(term).pipe(
+          : this.facade.search(term).pipe(
               map((tasks): SearchState => ({ status: 'done', ids: new Set(tasks.map((t) => t.id)) })),
               catchError(() => of<SearchState>({ status: 'error', ids: null })), // el aviso lo da el interceptor
               startWith<SearchState>({ status: 'searching', ids: null }),
@@ -234,6 +232,6 @@ export class TaskListComponent implements OnInit {
   }
 
   protected retry(): void {
-    this.taskService.reload();
+    this.facade.reload();
   }
 }

@@ -41,6 +41,7 @@ describe('TaskEditComponent: doble envío (exhaustMap)', () => {
     const puts = http.match({ method: 'PUT', url: `${TODOS}/4` });
     expect(puts.length).toBe(1);
     puts[0].flush({});
+    await new Promise((resolve) => setTimeout(resolve)); // la fachada responde tras una promesa
 
     expect(TestBed.inject(ToastService).toasts().filter((t) => t.message.includes('actualizada')).length).toBe(1);
     expect(navigate).toHaveBeenCalledTimes(1);

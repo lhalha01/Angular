@@ -53,6 +53,7 @@ describe('TaskEditComponent', () => {
     el.querySelector<HTMLButtonElement>('button[type="submit"]')!.click();
     http.expectOne(TODOS).flush([TASK]); // carga inicial del TaskService
     http.expectOne({ method: 'PUT', url: `${TODOS}/4` }).flush({});
+    await new Promise((resolve) => setTimeout(resolve)); // la fachada responde tras una promesa
 
     expect(navigate).toHaveBeenCalledWith(['/tasks', 4]);
     expect(TestBed.inject(ToastService).toasts()[0].message).toContain('#4 actualizada');
@@ -103,6 +104,7 @@ describe('TaskEditComponent with the own backend (persistentApi)', () => {
     const put = http.expectOne({ method: 'PUT', url: `${LOCAL_TODOS}/4` });
     expect(put.request.body.title).toBe('Título nuevo');
     put.flush({ ...TASK, title: 'Título nuevo' });
+    await new Promise((resolve) => setTimeout(resolve)); // la fachada responde tras una promesa
     expect(toast.toasts()[0].message).toContain('#4 actualizada');
     expect(navigate).toHaveBeenCalledWith(['/tasks', 4]);
   });
@@ -112,6 +114,7 @@ describe('TaskEditComponent with the own backend (persistentApi)', () => {
     http
       .expectOne({ method: 'PUT', url: `${LOCAL_TODOS}/4` })
       .flush({ detail: 'Tarea 4 no encontrada' }, { status: 404, statusText: 'Not Found' });
+    await new Promise((resolve) => setTimeout(resolve)); // la fachada rechaza tras una promesa
     expect(toast.toasts().map((t) => t.message)).toEqual(['No se pudo actualizar la tarea: Tarea 4 no encontrada.']);
     expect(navigate).not.toHaveBeenCalled();
   });

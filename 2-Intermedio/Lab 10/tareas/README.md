@@ -97,7 +97,8 @@ src/app
 │   ├── tareas/                 index.ts + tareas.routes.ts (rutas /tasks y /add-task, cargadas con loadChildren)
 │   │   ├── models/             task.model.ts (Task, NewTask…, isTask)
 │   │   ├── mappers/            task.dto.ts, task.mapper.ts (DTO de la API ↔ dominio `Task`; prioridad por defecto `medium`)
-│   │   ├── services/           task.service.ts, task-actions.service.ts (confirmar + modificar + avisar + Deshacer)
+│   │   ├── services/           task.service.ts (HTTP + estado en memoria), task-state.service.ts (lectura + `computed`),
+│   │   │                       tasks.facade.ts (lo único que ven los componentes; incluye confirmar + modificar + avisar + Deshacer)
 │   │   ├── components/         task-list (pantalla; task-query.ts y task-list-params.ts son funciones puras),
 │   │   │                       task-card, task-toolbar, task-form, task-detail, task-edit, add-task
 │   │   └── task.resolver.ts    carga la tarea de `:id` antes de activar la ruta
@@ -133,7 +134,7 @@ Alias de rutas (`tsconfig.json`): `@core/*`, `@shared/*` y `@features/*`. La arq
 - **Ciclo de vida**: `TaskFormComponent.ngOnChanges` reinicia el formulario con una copia cada vez que el padre pasa
   un valor inicial; `TaskListComponent.ngOnInit` lee los filtros de la URL; `ToastService.ngOnDestroy` cancela los
   temporizadores pendientes. El resto del estado reactivo usa signals y `effect()`, que se limpian solos.
-- **Pruebas**: `npm test` ejecuta 364 tests (cobertura ≈99 % de líneas: 99,62 %), incluida una prueba de integración
+- **Pruebas**: `npm test` ejecuta 376 tests (cobertura ≈99 % de líneas; las líneas, al 100 %), incluida una prueba de integración
   de las rutas reales. 40 de ellos cubren el modo del backend propio: ids y fechas del servidor, errores que
   llegan al usuario, "Deshacer" contra la API (incluido el 409) y los formularios de crear y editar.
 - **UserService** (servicio mock de `Servicios_mock.md`): listar, obtener por id, crear (POST) y eliminar (DELETE)
@@ -181,12 +182,13 @@ Alias de rutas (`tsconfig.json`): `@core/*`, `@shared/*` y `@features/*`. La arq
 | Capa HTTP: interceptores de autenticación y de errores (`withFetch`), reintentos con espera en la carga, DTO + mapper de tareas (`TaskDto`, `mapearTask`), contexto de cada petición (operación, errores esperados) y avisos de error centralizados; los componentes ya no gestionan los errores HTTP | 14.2 |
 | Búsqueda reactiva contra la API (`debounceTime` + `distinctUntilChanged` + `switchMap`), prioridad de la tarea (modelo, formulario, tarjeta, detalle y filtro, también en la URL) y protección de doble envío con `exhaustMap` en el alta y la edición | 15.2 |
 | Formulario de tarea con **Reactive Forms** (`FormBuilder`, `FormArray` de etiquetas, validador cruzado de fechas) y los campos nuevos `description`, `startDate`, `endDate` y `tags` (backend v4): modelo, DTO, mapper, tarjeta, detalle y botón desactivado mientras se guarda | 16.2 |
+| Estado de aplicación: `TaskStateService` (señales de solo lectura y `computed` `pending`, `completed` y `total`) y `TasksFacade`, que sustituye a `TaskActions` y es lo único que inyectan los componentes y el resolver (regla de ESLint); crear, editar y eliminar actualizan la vista sin recargar | 17.2 |
 
 ### Diferencias del Lab 12.2 con su enunciado
 
 - **Nombres:** las carpetas son `tareas` y `usuarios` (como en el esquema), pero los tipos siguen siendo `Task`, `User` y `TaskService`, los de la API.
 - **Imports entre features:** el enunciado pide ninguno, pero `tareas` importa `usuarios` (el responsable de cada tarea). Se admite solo por el barrel y en un sentido: `usuarios` no importa `tareas`. Lo vigila la regla `features` de `npm run check:architecture` (`ALLOWED_FEATURE_DEPS`).
-- **Barrels:** los tipos se exportan con `export type { … }` (`isolatedModules`) y solo exponen lo que otras partes usan (`TaskActions` es interno de `tareas`). Cada ruta de `paths` empieza por `./` (sin él, TS5090).
+- **Barrels:** los tipos se exportan con `export type { … }` (`isolatedModules`) y solo exponen lo que otras partes usan (`TaskActions` desapareció en el Lab 17.2: su lógica está en `TasksFacade`). Cada ruta de `paths` empieza por `./` (sin él, TS5090).
 - **Rutas por feature:** `app.routes.ts` carga `tareas` con `loadChildren` a `tareas.routes.ts` y `home` por su barrel; es lo único que se admite importar fuera del barrel.
 - **Piezas añadidas al esquema:** `core/services`, `shared/directives`, `features/home`, `tareas.routes.ts` y `task.resolver.ts`. La cabecera se extrajo a `core/layout/navbar`; `core/interceptors` y `features/usuarios/components` quedan vacías (`.gitkeep`) hasta los Labs que las usan.
 
@@ -220,7 +222,7 @@ Alias de rutas (`tsconfig.json`): `@core/*`, `@shared/*` y `@features/*`. La arq
 - **La prioridad es real** (`Task.priority`: `high`, `medium` o `low`), con un campo nuevo en el backend (`todos.priority`, migración v3, decidido contigo). El formulario ofrece un selector, las tarjetas y el detalle la muestran, y la lista la filtra con un `computed` junto con el estado y el usuario (también en la URL: `?prioridad=`). Con la API pública (`npm run start:public`), que no tiene prioridad, el mapper deja todas en `medium`.
 - **Los filtros combinados no hacen peticiones**: estado, usuario y prioridad se aplican en el cliente sobre lo cargado, así que «cambiar filtros en rápida sucesión» solo recalcula la última combinación.
 - **`exhaustMap` también en la edición**, no solo en la creación que pide el enunciado: los envíos pasan por un `Subject` y los que llegan con uno en curso se ignoran. El error no termina el flujo (se captura dentro) y el aviso lo da el interceptor.
-- **Fase 4 (sin suscripciones manuales):** los `subscribe()` que quedan están en manejadores de eventos de peticiones HTTP de un solo uso (`TaskActions` y `reload`, que completan solos) o en los `Subject` de los formularios (cerrados con `takeUntilDestroyed()`). No hay `unsubscribe()` manual en el código nuevo. `ngOnInit` (`TaskListComponent`) y `ngOnDestroy` (`ToastService`) ya existían y no son suscripciones.
+- **Fase 4 (sin suscripciones manuales):** los `subscribe()` que quedan están en manejadores de eventos de peticiones HTTP de un solo uso (`TasksFacade`, antes `TaskActions`, y `reload`, que completan solos) o en los `Subject` de los formularios (cerrados con `takeUntilDestroyed()`). No hay `unsubscribe()` manual en el código nuevo. `ngOnInit` (`TaskListComponent`) y `ngOnDestroy` (`ToastService`) ya existían y no son suscripciones.
 - **Evidencia**: la captura de Network muestra la petición `GET /todos?q=qu` **cancelada** por el `switchMap` al llegar la siguiente; para que hubiera una petición en vuelo se simuló una latencia de 900 ms en el navegador. En lugar de un GIF hay una secuencia de capturas reales.
 
 ### Diferencias del Lab 16.2 con su enunciado
@@ -232,6 +234,18 @@ Alias de rutas (`tsconfig.json`): `@core/*`, `@shared/*` y `@features/*`. La arq
 - **Etiquetas:** `FormArray` de controles con `required`, sin espacios en blanco y `maxLength(20)`; como mucho 20 por tarea (límite del servidor). El enunciado solo pide `required` y `maxLength(20)`.
 - **Al editar, vaciar un opcional lo borra**: el formulario emite los campos vacíos como `undefined` explícito (para que `{ ...task, ...draft }` los quite) y el mapper envía `null` y `[]`; el `PUT` del servidor conserva lo que no se envíe, pero lo que se envía vacío se borra.
 - **No se guarda nada con la API pública**, y el recorrido de las capturas no escribe en la base de datos.
+
+### Diferencias del Lab 17.2 con su enunciado
+
+- **Los nombres siguen en inglés** (decidido): `TaskStateService`, `TasksFacade`, `Task`, `pending`, `completed`, `total`, en lugar de `TareaStateService`, `TareasFacade`, `Tarea`, `pendientes`, `completadas`. Solo cambia el nombre; las funciones son las del enunciado.
+- **`TaskStateService` no guarda las tareas: las expone.** Ya existía un estado en memoria con `signal` (`TaskService`, sobre `InMemoryResource`), que aplica cada alta, cambio y baja cuando el servidor responde y se encarga de los reintentos de la carga. Duplicarlo en un segundo servicio habría creado dos fuentes de verdad, así que `TaskStateService` solo da `tasks` y `status` en solo lectura y calcula con `computed()` `pending`, `completed` y `total`. `cargando` y `error` del enunciado son los dos estados `loading` y `error` de `status`.
+- **Crear y eliminar actualizan la vista sin recargar**, como pide el criterio, pero por la vía que ya existía (la memoria de `TaskService`). La fachada reúne las operaciones: `create` y `update` devuelven una promesa y avisan (el aviso de error lo da el interceptor, no un `catch` propio); `toggleCompleted` y `remove` absorben a `TaskActions` (confirmación, aviso y «Deshacer»), que se elimina, y se añaden `reload`, `getById` (para el resolver) y `search` (la búsqueda de la lista contra `/todos?q=`).
+- **Los componentes no importan `TaskService` ni `TaskStateService`**: la lista, el alta, la edición y el resolver inyectan solo `TasksFacade` (y `UserService`, de otra feature). Una regla de ESLint lo impide para `components/**` y `task.resolver.ts` (se probó con un import temporal); los tests sí pueden usar el servicio para simularlo.
+- **`TaskService` sigue exportado en el barrel** de la feature, aunque hoy solo lo usa la fachada, y se exporta además `TasksFacade`.
+- **La evidencia no es una captura de Angular DevTools:** se leen los Signals reales de `TasksFacade` en la aplicación en ejecución (build de desarrollo) y se dibuja el árbol de componentes con sus nombres reales, antes y después de crear y de eliminar una tarea; el recorrido usó un backend con una base de datos temporal (`BACKEND_DB`), así que `backend/data/app.db` no cambia.
+- **`ng build`:** el initial total pasa de 329,38 a 329,48 kB (sin regresión relevante). El enunciado pide además `--stats-json`; no se ha usado porque la comparación se hizo con el resumen del build.
+
+Evidencias del Lab 17.2 en [`../../Lab 17/Lab 17.2/evidencias/`](../../Lab%2017/Lab%2017.2/evidencias/) (árbol de componentes y Signals de la fachada, con crear y eliminar sin recargar).
 
 Evidencias del Lab 16.2 en [`../../Lab 16/Lab 16.2/evidencias/`](../../Lab%2016/Lab%2016.2/evidencias/) (errores visibles, formulario sin errores y `FormArray` de etiquetas en uso).
 

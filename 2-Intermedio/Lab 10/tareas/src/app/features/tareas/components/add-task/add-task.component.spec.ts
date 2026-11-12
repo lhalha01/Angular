@@ -49,6 +49,7 @@ describe('AddTaskComponent', () => {
     const post = http.expectOne({ method: 'POST', url: TODOS });
     expect(post.request.body).toEqual(jasmine.objectContaining({ title: 'Comprar pan', userId: 1, completed: false }));
     post.flush({ id: 201 });
+    await new Promise((resolve) => setTimeout(resolve)); // la fachada responde tras una promesa
 
     expect(TestBed.inject(ToastService).toasts()[0].message).toContain('creada');
     expect(navigate).toHaveBeenCalledWith(['/tasks']);
@@ -99,6 +100,7 @@ describe('AddTaskComponent with the own backend (persistentApi)', () => {
     const post = http.expectOne({ method: 'POST', url: LOCAL_TODOS });
     expect('id' in post.request.body).toBeFalse();
     post.flush({ id: 301, userId: 1, title: 'Comprar pan', completed: false, createdAt: '2026-02-02T00:00:00.000Z' });
+    await new Promise((resolve) => setTimeout(resolve)); // la fachada responde tras una promesa
     expect(toast.toasts()[0].message).toBe('Tarea #301 creada');
     expect(navigate).toHaveBeenCalledWith(['/tasks']);
   });

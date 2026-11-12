@@ -233,6 +233,33 @@ describe('TaskListComponent', () => {
     });
   });
 
+  describe('load error and edit', () => {
+    it('«Reintentar» vuelve a pedir las tareas desde el estado de error (reload de la fachada)', () => {
+      TestBed.configureTestingModule({ providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()] });
+      const http = TestBed.inject(HttpTestingController);
+      const fixture = TestBed.createComponent(TaskListComponent);
+      fixture.detectChanges();
+      http.expectOne(TODOS).flush('no', { status: 404, statusText: 'Not Found' }); // un 4xx no se reintenta solo
+      http.expectOne(USERS).flush(USER_LIST);
+      fixture.detectChanges();
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelector('.state')?.textContent).toContain('Reintentar');
+
+      el.querySelector<HTMLButtonElement>('.state button')!.click();
+      http.expectOne(TODOS).flush(SMALL);
+      fixture.detectChanges();
+      expect(el.querySelectorAll('.meta').length).toBe(3);
+    });
+
+    it('«Editar» de una tarjeta abre el formulario de edición de esa tarea', () => {
+      const { el } = setup();
+      const navigate = spyOn(TestBed.inject(Router), 'navigate').and.resolveTo(true);
+      const editar = Array.from(el.querySelectorAll<HTMLButtonElement>('button')).filter((b) => b.textContent?.trim() === 'Editar');
+      editar[1].click();
+      expect(navigate).toHaveBeenCalledWith(['/tasks', 2, 'edit']);
+    });
+  });
+
   describe('sorting', () => {
     it('sorts by most recent by default', () => {
       expect(setup().ids()).toEqual(['#1', '#2', '#3']);

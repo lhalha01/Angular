@@ -1,0 +1,7 @@
+Lab 17.2 Tareas - TasksFacade y TaskStateService (recorrido real en Chrome, build de desarrollo, backend local con BD temporal)
+
+Componentes: AppComponent |   NavbarComponent |   TaskListComponent |     TaskToolbarComponent |     TaskCardComponent x10 |     PaginatorComponent |   ToastContainerComponent |   ConfirmDialogComponent
+Al cargar: tasks=200, status=ready, pending=110, completed=90, total=200
+Tras crear (#528): tasks=201, pending=111, completed=90, total=201; primera: #528 Preparar la demo de la facha
+Tras eliminar (#528): tasks=200, pending=110, completed=90, total=200
+Peticiones al backend: GET /todos, GET /users, POST /todos, DELETE /todos/528 (pagina sin recargar: true)

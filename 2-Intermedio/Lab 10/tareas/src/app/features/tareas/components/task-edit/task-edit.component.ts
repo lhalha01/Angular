@@ -1,11 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject, input, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
-import { EMPTY, Subject, catchError, exhaustMap, finalize, map } from 'rxjs';
+import { EMPTY, Subject, catchError, exhaustMap, finalize, from, map } from 'rxjs';
 import { HasUnsavedChanges } from '@core/guards/unsaved-changes.guard';
 import { Task, TaskDraft } from '../../models/task.model';
-import { TaskService } from '../../services/task.service';
-import { ToastService } from '@core/services/toast.service';
+import { TasksFacade } from '../../services/tasks.facade';
 import { StateMessageComponent } from '@shared/components/state-message/state-message.component';
 import { TaskFormComponent } from '../task-form/task-form.component';
 
@@ -13,6 +12,7 @@ import { TaskFormComponent } from '../task-form/task-form.component';
  * Ruta hija `/tasks/:id/edit`. La tarea la carga `taskResolver`; protegida por `unsavedChangesGuard`.
  * Como en `AddTaskComponent`, los envíos pasan por un `Subject` con `exhaustMap` (sin doble guardado) y se cierran con
  * `takeUntilDestroyed()`; el error HTTP lo avisa el interceptor y el formulario se queda como está para reintentar.
+ * Solo conoce la fachada (`TasksFacade`).
  */
 @Component({
   selector: 'app-task-edit',
@@ -38,9 +38,8 @@ import { TaskFormComponent } from '../task-form/task-form.component';
   `,
 })
 export class TaskEditComponent implements HasUnsavedChanges {
-  private readonly tasks = inject(TaskService);
+  private readonly facade = inject(TasksFacade);
   private readonly router = inject(Router);
-  private readonly toast = inject(ToastService);
   /** No existe si la tarea no se ha encontrado (se muestra el mensaje en su lugar). */
   private readonly form = viewChild(TaskFormComponent);
 
@@ -57,7 +56,8 @@ export class TaskEditComponent implements HasUnsavedChanges {
       .pipe(
         exhaustMap((task) => {
           this.saving.set(true);
-          return this.tasks.updateTask(task).pipe(
+          // `update` guarda y avisa; si falla, se rechaza.
+          return from(this.facade.update(task)).pipe(
             map(() => task),
             catchError(() => EMPTY),
             finalize(() => this.saving.set(false)),
@@ -65,10 +65,7 @@ export class TaskEditComponent implements HasUnsavedChanges {
         }),
         takeUntilDestroyed(),
       )
-      .subscribe((task) => {
-        this.toast.show(`Tarea #${task.id} actualizada`);
-        this.back(task);
-      });
+      .subscribe((task) => this.back(task));
   }
 
   hasUnsavedChanges(): boolean {

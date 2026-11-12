@@ -49,6 +49,7 @@ describe('AddTaskComponent: doble envío (exhaustMap)', () => {
     const posts = http.match({ method: 'POST', url: `${base}/todos` });
     expect(posts.length).toBe(1);
     posts[0].flush({ id: 201 });
+    await new Promise((resolve) => setTimeout(resolve)); // la fachada responde tras una promesa
 
     expect(toast.toasts().filter((t) => t.message.includes('creada')).length).toBe(1);
     expect(navigate).toHaveBeenCalledTimes(1);
@@ -73,12 +74,14 @@ describe('AddTaskComponent: doble envío (exhaustMap)', () => {
     guardar();
     http.expectOne({ method: 'GET', url: `${base}/todos` }).flush([]);
     http.expectOne({ method: 'POST', url: `${base}/todos` }).flush({ detail: 'El usuario 1 no existe' }, { status: 422, statusText: 'x' });
+    await new Promise((resolve) => setTimeout(resolve)); // la fachada rechaza tras una promesa
     expect(navigate).not.toHaveBeenCalled();
     expect(toast.toasts().map((t) => t.message)).toEqual(['No se pudo crear la tarea: El usuario 1 no existe.']);
 
     guardar(); // segundo intento: el flujo no se ha cerrado con el error
     const retry = http.expectOne({ method: 'POST', url: `${base}/todos` });
     retry.flush({ id: 301, userId: 1, title: 'Comprar pan', completed: false, priority: 'medium', createdAt: '2026-01-01T00:00:00.000Z' });
+    await new Promise((resolve) => setTimeout(resolve)); // la fachada responde tras una promesa
     expect(navigate).toHaveBeenCalledOnceWith(['/tasks']);
   });
 

@@ -1,11 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
-import { EMPTY, Subject, catchError, exhaustMap, finalize } from 'rxjs';
+import { EMPTY, Subject, catchError, exhaustMap, finalize, from } from 'rxjs';
 import { HasUnsavedChanges } from '@core/guards/unsaved-changes.guard';
 import { TaskDraft } from '../../models/task.model';
-import { TaskService } from '../../services/task.service';
-import { ToastService } from '@core/services/toast.service';
+import { TasksFacade } from '../../services/tasks.facade';
 import { TaskFormComponent } from '../task-form/task-form.component';
 
 /**
@@ -14,6 +13,7 @@ import { TaskFormComponent } from '../task-form/task-form.component';
  * Protección de doble envío: los envíos del formulario pasan por un `Subject` con `exhaustMap`, que ignora los que
  * llegan mientras hay uno en curso (aunque se pulse «Guardar» varias veces, solo se crea una tarea). El flujo se cierra
  * con `takeUntilDestroyed()`; el error HTTP lo avisa el interceptor y no termina el flujo (se captura dentro).
+Solo conoce la fachada (`TasksFacade`).
  */
 @Component({
   selector: 'app-add-task',
@@ -28,9 +28,8 @@ import { TaskFormComponent } from '../task-form/task-form.component';
   `,
 })
 export class AddTaskComponent implements HasUnsavedChanges {
-  private readonly tasks = inject(TaskService);
+  private readonly facade = inject(TasksFacade);
   private readonly router = inject(Router);
-  private readonly toast = inject(ToastService);
   private readonly form = viewChild.required(TaskFormComponent);
 
   /** Hay un guardado en curso: el formulario desactiva su botón mientras tanto. */
@@ -43,17 +42,15 @@ export class AddTaskComponent implements HasUnsavedChanges {
       .pipe(
         exhaustMap((draft) => {
           this.saving.set(true);
-          return this.tasks.addTask(draft).pipe(
+          // `create` crea la tarea (la lista la muestra sin recargar) y avisa; si falla, se rechaza.
+          return from(this.facade.create(draft)).pipe(
             catchError(() => EMPTY),
             finalize(() => this.saving.set(false)),
           );
         }),
         takeUntilDestroyed(),
       )
-      .subscribe((task) => {
-        this.toast.show(`Tarea #${task.id} creada`);
-        this.back();
-      });
+      .subscribe(() => this.back());
   }
 
   hasUnsavedChanges(): boolean {

@@ -8,7 +8,7 @@ import { Task } from '../models/task.model';
 import { ConfirmService } from '@core/services/confirm.service';
 import { TaskService } from './task.service';
 import { ToastService } from '@core/services/toast.service';
-import { TaskActions } from './task-actions.service';
+import { TasksFacade } from './tasks.facade';
 
 const TODOS = 'https://jsonplaceholder.typicode.com/todos';
 const SEED: Task[] = [
@@ -17,7 +17,7 @@ const SEED: Task[] = [
   { id: 3, userId: 2, title: 'tres', completed: false, priority: 'medium' },
 ];
 
-describe('TaskActions', () => {
+describe('TasksFacade: acciones del usuario', () => {
   function setup(accept: boolean) {
     TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
     const http = TestBed.inject(HttpTestingController);
@@ -25,7 +25,7 @@ describe('TaskActions', () => {
     http.expectOne(TODOS).flush(SEED);
     const ask = spyOn(TestBed.inject(ConfirmService), 'ask').and.resolveTo(accept);
     const toast = TestBed.inject(ToastService);
-    return { http, tasks, ask, toast, actions: TestBed.inject(TaskActions) };
+    return { http, tasks, ask, toast, actions: TestBed.inject(TasksFacade) };
   }
 
   const ids = (tasks: TaskService) => tasks.tasks().map((t) => t.id);
@@ -109,7 +109,7 @@ describe('TaskActions', () => {
 });
 
 /** Con el backend propio los errores de la API llegan al usuario y "Deshacer" recrea la tarea allí. */
-describe('TaskActions with the own backend (persistentApi)', () => {
+describe('TasksFacade with the own backend (persistentApi)', () => {
   const LOCAL = 'http://localhost:8000/todos';
   const original = { ...environment };
   const STORED: Task[] = SEED.map((t, i) => ({ ...t, createdAt: `2026-01-01T00:00:0${i + 1}.000Z` }));
@@ -123,7 +123,7 @@ describe('TaskActions with the own backend (persistentApi)', () => {
     const tasks = TestBed.inject(TaskService);
     http.expectOne(LOCAL).flush(STORED);
     spyOn(TestBed.inject(ConfirmService), 'ask').and.resolveTo(accept);
-    return { http, tasks, toast: TestBed.inject(ToastService), actions: TestBed.inject(TaskActions) };
+    return { http, tasks, toast: TestBed.inject(ToastService), actions: TestBed.inject(TasksFacade) };
   }
   const messages = (toast: ToastService) => toast.toasts().map((t) => t.message);
   const cleanUp = (toast: ToastService) => toast.toasts().forEach((t) => toast.dismiss(t.id));

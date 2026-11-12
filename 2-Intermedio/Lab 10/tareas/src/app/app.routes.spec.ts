@@ -8,6 +8,7 @@ import { Task } from '@features/tareas';
 import { AuthService } from '@core/services/auth.service';
 import { ConfirmService } from '@core/services/confirm.service';
 import { TaskService } from '@features/tareas';
+import { ToastService } from '@core/services/toast.service';
 
 const TODOS = 'https://jsonplaceholder.typicode.com/todos';
 const USERS = 'https://jsonplaceholder.typicode.com/users';
@@ -40,6 +41,13 @@ describe('task routes', () => {
     return { harness, http, router: TestBed.inject(Router), settle, text: () => harness.routeNativeElement?.textContent ?? '' };
   }
 
+  /**
+   * Guardar avisa con un aviso emergente, que tiene un temporizador de 5 s. Como el aviso lo da ahora la fachada, tras
+   * una promesa (dentro de la zona de Angular), ese temporizador haría que `whenStable()` esperara 5 s: estos tests
+   * no miran el aviso, así que no se crea.
+   */
+  const spyOnToastSinTemporizador = () => spyOn(TestBed.inject(ToastService), 'show');
+
   it('shows the task detail resolved from the :id parameter', async () => {
     const { harness, settle, text } = await setup();
     await harness.navigateByUrl('/tasks/2');
@@ -71,6 +79,7 @@ describe('task routes', () => {
 
   it('shows the edited data on the detail page after saving', async () => {
     const { harness, http, router, settle } = await setup();
+    spyOnToastSinTemporizador();
     await harness.navigateByUrl('/tasks/2/edit');
     await settle();
 
@@ -153,6 +162,7 @@ describe('task routes', () => {
 
     it('does not ask after saving (the save itself navigates away)', async () => {
       const { harness, http, router, settle } = await setup();
+      spyOnToastSinTemporizador();
       const ask = spyOn(TestBed.inject(ConfirmService), 'ask');
       await harness.navigateByUrl('/tasks/2/edit');
       await settle();

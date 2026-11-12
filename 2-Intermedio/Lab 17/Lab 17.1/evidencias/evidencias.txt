@@ -1,0 +1,8 @@
+Lab 17.1 TalentHub - Estado con Signals y fachada (recorrido real en Chrome, build de desarrollo, backend local con BD temporal)
+
+Antes del alta: empleados=10, cargando=false, error=null, disponibles=5, ocupados=5, totalPorRol={"desarrollador":10,"diseñador":0,"qa":0,"devops":0,"manager":0}
+Despues del alta (Marta Ruiz, QA): empleados=11, disponibles=6, ocupados=5, totalPorRol={"desarrollador":10,"diseñador":0,"qa":1,"devops":0,"manager":0}
+Aviso: Marta Ruiz incorporado correctamente
+GET /users antes/despues del alta: 1/1 (pagina sin recargar: true)
+Peticiones al backend en el recorrido: GET /users, OPTIONS /users, OPTIONS /todos?_limit=20, GET /todos?_limit=20, POST /users, OPTIONS /users
+Filtro de rol «qa»: 1 visible(s), 0 peticiones nuevas
