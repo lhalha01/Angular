@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from . import config
 from .db import init_db
-from .routers import todos, users
+from .routers import projects, todos, users
 
 
 def create_app(db_path: Path | None = None) -> FastAPI:
@@ -32,10 +32,11 @@ def create_app(db_path: Path | None = None) -> FastAPI:
 
     app.include_router(users.router)
     app.include_router(todos.router)
+    app.include_router(projects.router)
 
     @app.get("/", tags=["info"])
     def root() -> dict[str, object]:
-        return {"name": app.title, "docs": "/docs", "resources": ["/users", "/todos"]}
+        return {"name": app.title, "docs": "/docs", "resources": ["/users", "/todos", "/projects"]}
 
     @app.get("/health", tags=["info"])
     def health() -> dict[str, str]:

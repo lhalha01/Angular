@@ -42,15 +42,15 @@ export class EmpleadoService {
   }
 
   /**
-   * Da de alta un empleado. La API solo guarda nombre y email; lo demás (rol, habilidades…) se conserva del
-   * argumento, porque la respuesta no lo trae. Con el backend local el alta es real (se guarda en SQLite).
+   * Da de alta un empleado. La API guarda todos sus datos (nombre, email, rol, habilidades, disponibilidad y proyecto) y
+   * devuelve el empleado tal como quedó, con su id y su fecha de incorporación. El alta es real (se guarda en SQLite).
    */
   crear(datos: NuevoEmpleado): Observable<Empleado> {
     return this.http.post<unknown>(this.url, aNuevoEmpleadoDto(datos)).pipe(
       map((json) => {
         const creado = leerEmpleado(json);
         if (creado === null) throw new Error('La API devolvió un empleado con una forma inesperada.');
-        return { ...creado, ...datos };
+        return creado;
       }),
     );
   }

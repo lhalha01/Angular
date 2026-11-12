@@ -15,5 +15,14 @@ export interface Proyecto {
   empleadosIds: number[];
 }
 
+/** Una persona del equipo de un proyecto: lo mínimo para mostrarla y enlazar a su perfil. */
+export interface MiembroEquipo {
+  id: number;
+  nombre: string;
+}
+
+/** Los estados posibles, en el orden en que se ofrecen en el filtro. */
+export const ESTADOS_PROYECTO: readonly EstadoProyecto[] = ['activo', 'pausado', 'completado'];
+
 /** Vista reducida para listados. */
 export type ProyectoResumen = Pick<Proyecto, 'id' | 'nombre' | 'cliente' | 'estado'>;

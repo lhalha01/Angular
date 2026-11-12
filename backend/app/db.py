@@ -18,8 +18,11 @@ from .config import SEED_DIR
 
 logger = logging.getLogger("uvicorn.error")
 
-USERS_SCHEMA = """
-CREATE TABLE users (
+# Roles de un empleado (el dominio de TalentHub). Son datos del recurso /users desde el esquema 5.
+ROLES = ("desarrollador", "diseñador", "qa", "devops", "manager")
+PROJECT_STATUSES = ("active", "paused", "completed")
+
+_USERS_BASE_COLUMNS = """
     -- AUTOINCREMENT evita reutilizar el id de un usuario borrado.
     id       INTEGER PRIMARY KEY AUTOINCREMENT,
     name     TEXT NOT NULL,
@@ -28,7 +31,40 @@ CREATE TABLE users (
     phone    TEXT,
     website  TEXT,
     address  TEXT,   -- objeto JSON (street, suite, city, zipcode, geo)
-    company  TEXT    -- objeto JSON (name, catchPhrase, bs)
+    -- `company` es un objeto JSON (name, catchPhrase, bs); va el último y sin comentario detrás para poder añadir columnas.
+    company  TEXT
+"""
+
+# Columnas que añade el esquema 5 a `users` (datos del empleado). Todas tienen valor por defecto u opcionales, así
+# que los clientes anteriores (Lab 10 y 10.1) siguen funcionando sin enviarlas.
+EMPLOYEE_COLUMNS = {
+    "role": f"role TEXT NOT NULL DEFAULT 'desarrollador' CHECK (role IN ({', '.join(repr(r) for r in ROLES)}))",
+    "skills": "skills TEXT NOT NULL DEFAULT '[]'",  # lista JSON de {name, level}
+    "available": "available INTEGER NOT NULL DEFAULT 1 CHECK (available IN (0, 1))",
+    # El proyecto al que está asignado; al borrar el proyecto, la persona queda sin proyecto.
+    "project_id": "project_id INTEGER REFERENCES projects (id) ON DELETE SET NULL",
+    "hired_at": "hired_at TEXT",  # día ISO (AAAA-MM-DD) de incorporación
+}
+
+# Esquema de `users` hasta la versión 4 (sin datos de empleado): lo usan las migraciones y las pruebas de bases antiguas.
+USERS_SCHEMA_V4 = f"CREATE TABLE users ({_USERS_BASE_COLUMNS});"
+
+USERS_SCHEMA = f"""
+CREATE TABLE users (
+{_USERS_BASE_COLUMNS.rstrip()},
+    {(","+chr(10)+"    ").join(EMPLOYEE_COLUMNS.values())}
+);
+CREATE INDEX idx_users_project_id ON users (project_id);
+"""
+
+PROJECTS_SCHEMA = f"""
+CREATE TABLE projects (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    name       TEXT NOT NULL,
+    client     TEXT NOT NULL,
+    status     TEXT NOT NULL DEFAULT 'active' CHECK (status IN ({', '.join(repr(s) for s in PROJECT_STATUSES)})),
+    start_date TEXT NOT NULL,  -- día ISO (AAAA-MM-DD)
+    end_date   TEXT            -- día ISO, no anterior al de inicio; opcional
 );
 """
 
@@ -56,7 +92,8 @@ CREATE INDEX idx_todos_user_id ON todos (user_id);
 #   2: `todos.user_id` pasa a ser una clave foránea hacia `users` con borrado en cascada.
 #   3: `todos.priority` ('high' | 'medium' | 'low', por defecto 'medium').
 #   4: `todos.description`, `todos.start_date`, `todos.end_date` y `todos.tags` (todas opcionales).
-SCHEMA_VERSION = 4
+#   5: tabla `projects` y los datos de empleado en `users` (`role`, `skills`, `available`, `project_id`, `hired_at`).
+SCHEMA_VERSION = 5
 
 # Prioridad de las tareas iniciales: se reparte según el id (1 → media, 2 → baja, 0 → alta) para que el
 # filtro por prioridad tenga algo que filtrar en los datos de ejemplo.
@@ -81,16 +118,39 @@ def connect(db_path: Path) -> sqlite3.Connection:
     return conn
 
 
+def _seed_projects(conn: sqlite3.Connection) -> None:
+    projects = json.loads((SEED_DIR / "projects.json").read_text(encoding="utf-8"))
+    conn.executemany(
+        "INSERT INTO projects (id, name, client, status, start_date, end_date) "
+        "VALUES (:id, :name, :client, :status, :startDate, :endDate)",
+        projects,
+    )
+
+
+def _employee_values(user: dict) -> dict:
+    """Los datos de empleado de un usuario inicial, tal como se guardan en la base de datos."""
+    return {
+        "role": user["role"],
+        "skills": json.dumps(user["skills"], ensure_ascii=False),
+        "available": int(user["available"]),
+        "project_id": user["projectId"],
+        "hired_at": user["hiredAt"],
+    }
+
+
 def _seed_users(conn: sqlite3.Connection) -> None:
     users = json.loads((SEED_DIR / "users.json").read_text(encoding="utf-8"))
     conn.executemany(
-        "INSERT INTO users (id, name, username, email, phone, website, address, company) "
-        "VALUES (:id, :name, :username, :email, :phone, :website, :address, :company)",
+        "INSERT INTO users (id, name, username, email, phone, website, address, company, "
+        "role, skills, available, project_id, hired_at) "
+        "VALUES (:id, :name, :username, :email, :phone, :website, :address, :company, "
+        ":role, :skills, :available, :project_id, :hired_at)",
         [
             {
                 **u,
                 "address": json.dumps(u.get("address")),
                 "company": json.dumps(u.get("company")),
+                **_employee_values(u),
             }
             for u in users
         ],
@@ -124,7 +184,9 @@ def _seed_todos(conn: sqlite3.Connection) -> None:
 
 
 # Cada recurso: (tabla, esquema, función que carga sus datos iniciales).
+# Los proyectos van antes que los usuarios: `users.project_id` es una clave foránea hacia `projects`.
 RESOURCES: list[tuple[str, str, Callable[[sqlite3.Connection], None]]] = [
+    ("projects", PROJECTS_SCHEMA, _seed_projects),
     ("users", USERS_SCHEMA, _seed_users),
     ("todos", TODOS_SCHEMA, _seed_todos),
 ]
@@ -207,6 +269,39 @@ def _migrate_todos_add_planning(conn: sqlite3.Connection) -> list[str]:
     return added
 
 
+def _migrate_users_add_employee_fields(conn: sqlite3.Connection) -> list[str]:
+    """Esquema 4 → 5: añade a `users` los datos de empleado (`role`, `skills`, `available`, `project_id`, `hired_at`).
+
+    Solo se añaden las columnas que falten. Si se añadieron, los usuarios iniciales que sigan en la base de datos
+    reciben sus datos de empleado de ejemplo (rol, habilidades, disponibilidad y proyecto) y el resto queda con los
+    valores por defecto (desarrollador, disponible, sin proyecto y sin habilidades); la fecha de incorporación que falte
+    será la de hoy. Lo que ya hubiera en esas columnas (una base de datos que ya las trae) no se toca.
+    Devuelve las columnas añadidas.
+    """
+    existing = {row["name"] for row in conn.execute("PRAGMA table_info(users)")}
+    added = []
+    for name, definition in EMPLOYEE_COLUMNS.items():
+        if name not in existing:
+            conn.execute(f"ALTER TABLE users ADD COLUMN {definition}")
+            added.append(name)
+    if added:
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_users_project_id ON users (project_id)")
+        seed = json.loads((SEED_DIR / "users.json").read_text(encoding="utf-8"))
+        project_ids = {row["id"] for row in conn.execute("SELECT id FROM projects")}
+        for user in seed:
+            values = _employee_values(user)
+            if values["project_id"] not in project_ids:
+                values["project_id"] = None
+                values["available"] = 1  # sin proyecto no puede estar ocupado
+            conn.execute(
+                "UPDATE users SET role = :role, skills = :skills, available = :available, project_id = :project_id, "
+                "hired_at = :hired_at WHERE id = :id",
+                {**values, "id": user["id"]},
+            )
+        conn.execute("UPDATE users SET hired_at = ? WHERE hired_at IS NULL", (datetime.now(timezone.utc).date().isoformat(),))
+    return added
+
+
 def init_db(db_path: Path) -> None:
     """Crea las tablas que falten, carga los datos iniciales de **cada tabla nueva** y migra el
     esquema de una base de datos anterior.
@@ -241,6 +336,8 @@ def init_db(db_path: Path) -> None:
                         "(de usuarios que ya no existían)",
                         removed,
                     )
+            if "users" in existing:
+                _migrate_users_add_employee_fields(conn)
             conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
         conn.commit()
     finally:

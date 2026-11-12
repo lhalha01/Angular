@@ -4,21 +4,28 @@ import { reintentarConEspera } from '@core/http/reintentar';
 import { NOTIFICAR_404 } from '@core/interceptors/http-context';
 import { Observable, catchError, map, of, throwError } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { leerProyecto, leerProyectos } from '../mappers/proyecto.mapper';
-import { Proyecto } from '../models/proyecto.model';
+import { leerEquipo, leerProyecto, leerProyectos } from '../mappers/proyecto.mapper';
+import { MiembroEquipo, Proyecto } from '../models/proyecto.model';
 
 /**
- * Acceso a los datos de proyectos. Como pide el enunciado del Lab 14, la base de los proyectos son las tareas
- * (`/todos`) del backend local, traducidas al modelo de dominio con el mapper.
+ * Acceso a los datos de proyectos (patrón Repository). Lee y escribe los proyectos (`/projects`) del backend local y los
+ * traduce al modelo de dominio con el mapper: los DTO no salen de aquí.
  */
 @Injectable({ providedIn: 'root' })
 export class ProyectoService {
   private readonly http = inject(HttpClient);
-  private readonly url = `${environment.apiUrl}/todos`;
+  private readonly url = `${environment.apiUrl}/projects`;
 
-  /** Los 20 primeros proyectos. Reintenta (2 veces, con espera) si falla por conexión o por el servidor. */
+  /** Todos los proyectos. Reintenta (2 veces, con espera) si falla por conexión o por el servidor. */
   getAll(): Observable<Proyecto[]> {
-    return this.http.get<unknown>(this.url, { params: { _limit: 20 } }).pipe(reintentarConEspera(), map(leerProyectos));
+    return this.http.get<unknown>(this.url).pipe(reintentarConEspera(), map(leerProyectos));
+  }
+
+  /** Las personas del equipo del proyecto: los usuarios asignados a él (`/users?projectId=`). */
+  getEquipo(proyectoId: number): Observable<MiembroEquipo[]> {
+    return this.http
+      .get<unknown>(`${environment.apiUrl}/users`, { params: { projectId: proyectoId } })
+      .pipe(reintentarConEspera(), map(leerEquipo));
   }
 
   /** El proyecto, o `null` si no existe (404) o la respuesta no tiene la forma esperada. Otros errores se propagan. */

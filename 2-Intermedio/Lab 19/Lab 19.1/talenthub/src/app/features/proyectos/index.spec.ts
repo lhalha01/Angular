@@ -4,7 +4,7 @@ import * as proyectos from '@features/proyectos';
 
 describe('barrel de la feature proyectos', () => {
   it('expone exactamente su API pública (valores)', () => {
-    expect(Object.keys(proyectos)).toEqual(['ProyectoService']);
+    expect(Object.keys(proyectos)).toEqual(['ESTADOS_PROYECTO', 'ProyectoService']);
   });
 
   it('el servicio se puede inyectar', () => {

@@ -233,5 +233,5 @@ class TestCors:
 
 class TestInfo:
     def test_raiz_y_health(self, client: TestClient):
-        assert client.get("/").json()["resources"] == ["/users", "/todos"]
+        assert client.get("/").json()["resources"] == ["/users", "/todos", "/projects"]
         assert client.get("/health").json() == {"status": "ok"}

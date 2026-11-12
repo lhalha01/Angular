@@ -31,7 +31,7 @@ npm run lint                                                         # ESLint: 0
 npm run check:architecture                                           # reglas de arquitectura (barrel, capas, OnPush)
 npm run test:architecture                                            # tests de esa comprobación (13)
 npx ng build --stats-json                                            # compilación + metafile para analizar el bundle
-npx ng test --watch=false --browsers=ChromeHeadless --code-coverage  # 260 tests, 100 % de líneas (no necesitan el backend)
+npx ng test --watch=false --browsers=ChromeHeadless --code-coverage  # 271 tests, 100 % de líneas (no necesitan el backend)
 ```
 
 ## Qué hay de nuevo respecto al Lab 18.1
@@ -53,7 +53,7 @@ cargada no se vuelve a pedir) y los proyectos activos, de `ProyectoService`.
 | Todos los `@for` tienen `track` con id único | Los 9 `@for` llevan `track` (ids de empleado y de proyecto, el rol o el nivel en las listas fijas, el control en el `FormArray`); Angular ya exige un `track` en cada `@for` |
 | El desglose por rol se carga con `@defer` | `@defer (on viewport; prefetch on idle)` con `@loading` y `@placeholder`; chunk propio de 1,72 kB; pruebas con `DeferBlockBehavior.Manual` en `dashboard.spec.ts` |
 | `ng lint` a 0 errores | 0 errores y 0 advertencias, sin necesidad de `--fix` |
-| `ng test` sigue pasando | 260 tests (245 en el 18.1 + 15 del dashboard, `StatCard` y `DesglosePorRol`), 100 % de líneas |
+| `ng test` sigue pasando | 271 tests (245 en el 18.1 + 15 del dashboard, `StatCard` y `DesglosePorRol` + 11 de la capa de datos adaptada), 100 % de líneas |
 | Chunks separados para `empleados`, `proyectos` y `dashboard` | Uno por feature (`empleados` 53,28 kB, `dashboard` 3,06 kB, `proyectos` 2,02 kB); detalle en `AUDIT.md` |
 
 ## Desviaciones respecto al enunciado
@@ -72,6 +72,16 @@ cargada no se vuelve a pedir) y los proyectos activos, de `ProyectoService`.
    producción y el backend local con una base de datos temporal (`BACKEND_DB`); no son capturas de la pestaña de Chrome.
 7. **Cifras del dashboard:** `—` mientras no hay datos o si la carga falla (el aviso del error lo da el interceptor); una
    recarga conserva la lista anterior.
+
+## Adaptación al backend con empleados y proyectos reales
+
+Esta es la **versión final de la serie** 11.1–19.1 (cada laboratorio es una copia del anterior). Cuando el backend se adaptó
+para la práctica final ([Lab 20](../../../Lab%2020/talenthub/README.md)), esta versión adoptó también la **capa de datos**:
+`EmpleadoService` lee y guarda los empleados de `/users` con su rol, habilidades, disponibilidad y proyecto (`role`, `skills`,
+`available`, `projectId`, `hiredAt`) y `ProyectoService` lee los proyectos de `/projects` (ya no son tareas disfrazadas); los
+mappers (`empleado.mapper.ts`, `proyecto.mapper.ts`) traducen la API al dominio. El código de la interfaz de este laboratorio no
+cambia, y los laboratorios 11.1 a 18.1 se quedan como estaban (siguen funcionando: los cambios del backend son aditivos).
+Con ello, las pruebas pasan a ser 271. Los tamaños del bundle de `AUDIT.md` no cambian (306,95 kB iniciales antes y después).
 
 ## Evidencias
 

@@ -75,16 +75,49 @@ Compatibles con el formato de JSONPlaceholder (`id`, `name`, `username`, `email`
 
 | Método y ruta | Qué hace | Respuesta |
 | --- | --- | --- |
-| `GET /users` | Lista usuarios. Parámetros opcionales: `_page` y `_limit` (paginación, límite máximo 100) y `q` (busca en nombre, usuario y email). La cabecera `X-Total-Count` indica el total antes de paginar | 200 |
+| `GET /users` | Lista usuarios. Parámetros opcionales: `_page` y `_limit` (paginación, límite máximo 100), `q` (busca en nombre, usuario y email) y los filtros de empleado `role`, `available` y `projectId` (el equipo de un proyecto). La cabecera `X-Total-Count` indica el total ya filtrado y antes de paginar | 200 |
 | `GET /users/{id}` | Un usuario | 200, o 404 |
 | `POST /users` | Crea un usuario. El **id lo asigna el servidor** y no se reutiliza si se borra. Si se envía un `id`, se usa si está libre (si no, **409**): sirve para restaurar un usuario borrado | 201 |
-| `PUT /users/{id}` | Sustituye el usuario completo (lo que no se envía queda vacío) | 200, o 404 |
+| `PUT /users/{id}` | Sustituye el usuario completo (lo que no se envía queda vacío, **salvo los datos de empleado**, que se conservan) | 200, o 404 |
 | `PATCH /users/{id}` | Cambia solo los campos enviados; `address` y `company` se combinan con los existentes | 200, o 404 |
 | `DELETE /users/{id}` | Borra el usuario **y, en cascada, todas sus tareas** (`/todos`) | 204, o 404 |
 | `GET /health` | Comprobación de que el servidor responde | 200 |
 
 `name` y `email` son obligatorios y se validan (nombre de 1 a 120 caracteres, email con formato válido);
 un cuerpo no válido devuelve 422 y no guarda nada.
+
+**Datos de empleado (TalentHub).** Un usuario es también un empleado, con cinco campos opcionales que JSONPlaceholder
+no tiene (si no se envían, el Lab 10 y el 10.1 siguen funcionando igual):
+
+| Campo | Qué es | Por defecto |
+| --- | --- | --- |
+| `role` | `"desarrollador"`, `"diseñador"`, `"qa"`, `"devops"` o `"manager"` | `"desarrollador"` |
+| `skills` | Lista de hasta 20 habilidades `{ "name": 1–30 caracteres, "level": "junior" \| "mid" \| "senior" }` | `[]` |
+| `available` | Si está disponible para nuevos proyectos | `true` |
+| `projectId` | El proyecto (`/projects`) al que está asignado, o `null` | `null` |
+| `hiredAt` | Día de incorporación (`AAAA-MM-DD`, debe existir) | hoy |
+
+Regla: **quien no está disponible debe tener un proyecto** (si no, 422), y el proyecto debe existir. En `PUT`, los datos de
+empleado que el cuerpo no incluya **se conservan** (para quitar el proyecto o la fecha hay que enviarlos `null`); en `PATCH`
+solo cambian los enviados y `role`, `skills` y `available` no admiten `null`.
+
+## Endpoints de `/projects`
+
+Proyectos de TalentHub: `id`, `name` (3–120 caracteres), `client`, `status` (`"active"`, `"paused"` o `"completed"`; por
+defecto `"active"`), `startDate` (por defecto, hoy), `endDate` (opcional, no anterior al inicio) y `memberIds`, su
+**equipo**: no se guarda en el proyecto, son los usuarios cuyo `projectId` apunta a él (así que se asigna desde `/users`).
+
+| Método y ruta | Qué hace | Respuesta |
+| --- | --- | --- |
+| `GET /projects` | Lista proyectos, ordenados por id. Filtros opcionales: `status` y `q` (busca en nombre y cliente). Con `_page` y `_limit` (máx. 200) pagina; sin `_limit` devuelve todos. `X-Total-Count` es el total ya filtrado | 200 |
+| `GET /projects/{id}` | Un proyecto, con su equipo | 200, o 404 |
+| `POST /projects` | Crea un proyecto (equipo vacío). El **id lo asigna el servidor**; si se envía, se usa si está libre (si no, **409**) | 201 |
+| `PUT /projects/{id}` | Sustituye `name` y `client`; `status`, `startDate` y `endDate` que el cuerpo no traiga se **conservan** (para quitar el fin, `null`). No toca el equipo | 200, o 404 |
+| `PATCH /projects/{id}` | Cambia solo los campos enviados (`endDate: null` quita el fin) | 200, o 404 |
+| `DELETE /projects/{id}` | Borra el proyecto; **su equipo queda sin proyecto y disponible** | 204, o 404 |
+
+Los 20 proyectos de ejemplo salen de `app/seed/projects.json`; los usuarios 1, 3, 5, 7 y 9 están ocupados en los proyectos
+8, 2, 16, 10 y 4, y los pares están disponibles.
 
 ## Endpoints de `/todos`
 
@@ -114,8 +147,8 @@ cabecera `X-Total-Count` (por eso esa cabecera está expuesta a CORS).
 
 ## Datos y persistencia
 
-- La base de datos es el archivo `data/app.db`. **El repositorio incluye una con los datos de ejemplo** (10 usuarios y
-  200 tareas, los de JSONPlaceholder), así que quien clone parte de ella sin hacer nada. Si el archivo no existe, se
+- La base de datos es el archivo `data/app.db`. **El repositorio incluye una con los datos de ejemplo** (10 usuarios, con sus datos de
+  empleado, 200 tareas y 20 proyectos), así que quien clone parte de ella sin hacer nada. Si el archivo no existe, se
   crea solo al arrancar. Es el único archivo de `data/` que se versiona (véase "La base de datos en git").
 - Cuando se crea de cero, se rellena con esos mismos 10 usuarios y 200 tareas (copiados una vez en
   `app/seed/`, así que no hace falta internet para usarlo). A cada tarea se le asigna una fecha de creación
@@ -146,6 +179,10 @@ git update-index --no-skip-worktree backend/data/app.db    # deshacer lo anterio
 La versión del esquema se guarda en la propia base de datos (`PRAGMA user_version`). Al arrancar, una base
 de datos anterior se migra sola:
 
+- **Versión 5 (TalentHub):** se crea la tabla `projects` (con sus 20 proyectos de ejemplo) y se añaden a `users` las columnas
+  `role`, `skills`, `available`, `project_id` (clave foránea hacia `projects`, `ON DELETE SET NULL`) y `hired_at`. Los diez usuarios
+  iniciales que sigan en la base de datos reciben sus datos de empleado de ejemplo; cualquier otro usuario queda como
+  desarrollador disponible, sin proyecto ni habilidades y con la fecha de hoy. No se pierde ni se pisa nada de lo que ya hubiera.
 - **Versión 4 (planificación):** `ALTER TABLE … ADD COLUMN` para `description`, `start_date`, `end_date` y `tags` (esta última
   `NOT NULL DEFAULT '[]'`, una lista JSON). Las tareas existentes quedan sin descripción ni fechas y sin etiquetas.
 - **Versión 3 (`todos.priority`):** `ALTER TABLE … ADD COLUMN priority … DEFAULT 'medium'` con una restricción `CHECK`
@@ -176,7 +213,7 @@ Pensado para uso local y didáctico:
 .venv/bin/python -m pytest
 ```
 
-159 tests: listado, filtros, prioridad y planificación (y sus migraciones), paginación, búsqueda, alta, PUT, PATCH, borrado, validaciones, restauración de
+232 tests: listado, filtros, prioridad y planificación (y sus migraciones), empleados y proyectos (`test_employees.py`, `test_projects.py`, `test_migration_v5.py`), paginación, búsqueda, alta, PUT, PATCH, borrado, validaciones, restauración de
 registros borrados, la relación entre tareas y usuarios (incluido el borrado en cascada, también impuesto
 por la base de datos), CORS, persistencia (los cambios sobreviven a reiniciar el servidor) y las migraciones
 de una base de datos existente (huérfanas, ids, fechas y reintentos).
@@ -201,8 +238,8 @@ backend/
 │   ├── config.py        rutas y CORS
 │   ├── db.py            SQLite: esquema, datos iniciales por tabla, conexión por petición
 │   ├── schemas.py       validación y forma de las respuestas
-│   ├── routers/         un router por recurso: users.py y todos.py
-│   └── seed/            datos iniciales: users.json y todos.json
+│   ├── routers/         un router por recurso: users.py, todos.py y projects.py
+│   └── seed/            datos iniciales: users.json, todos.json y projects.json
 ├── tests/               pytest
 ├── run.py               arranque del servidor (--port, --host, --reset)
 ├── start.cmd / start.sh crean el entorno virtual, instalan dependencias y arrancan

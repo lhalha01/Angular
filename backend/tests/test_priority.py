@@ -7,7 +7,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from app.config import SEED_DIR
-from app.db import SCHEMA_VERSION, USERS_SCHEMA, init_db
+from app.db import SCHEMA_VERSION, USERS_SCHEMA_V4, init_db
 from app.main import create_app
 
 NEW_TODO = {"userId": 1, "title": "Preparar la demo", "completed": False}
@@ -122,7 +122,7 @@ def make_v2_db(db_path: Path) -> None:
     """Base de datos del esquema 2: con la clave foránea pero sin `priority`."""
     conn = sqlite3.connect(db_path)
     conn.executescript(
-        USERS_SCHEMA
+        USERS_SCHEMA_V4
         + """
         CREATE TABLE todos (
             id         INTEGER PRIMARY KEY AUTOINCREMENT,

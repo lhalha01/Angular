@@ -20,7 +20,25 @@
       "name": "Romaguera-Crona",
       "catchPhrase": "Multi-layered client-server neural-net",
       "bs": "harness real-time e-markets"
-    }
+    },
+    "role": "desarrollador",
+    "skills": [
+      {
+        "name": "Angular",
+        "level": "junior"
+      },
+      {
+        "name": "Docker",
+        "level": "mid"
+      },
+      {
+        "name": "SQL",
+        "level": "senior"
+      }
+    ],
+    "available": false,
+    "projectId": 8,
+    "hiredAt": "2023-01-01"
   },
   {
     "id": 2,
@@ -43,7 +61,25 @@
       "name": "Deckow-Crist",
       "catchPhrase": "Proactive didactic contingency",
       "bs": "synergize scalable supply-chains"
-    }
+    },
+    "role": "diseñador",
+    "skills": [
+      {
+        "name": "TypeScript",
+        "level": "mid"
+      },
+      {
+        "name": "Figma",
+        "level": "senior"
+      },
+      {
+        "name": "CI/CD",
+        "level": "junior"
+      }
+    ],
+    "available": true,
+    "projectId": null,
+    "hiredAt": "2023-03-06"
   },
   {
     "id": 3,
@@ -66,7 +102,25 @@
       "name": "Romaguera-Jacobson",
       "catchPhrase": "Face to face bifurcated interface",
       "bs": "e-enable strategic applications"
-    }
+    },
+    "role": "qa",
+    "skills": [
+      {
+        "name": "RxJS",
+        "level": "senior"
+      },
+      {
+        "name": "Testing",
+        "level": "junior"
+      },
+      {
+        "name": "Angular",
+        "level": "mid"
+      }
+    ],
+    "available": false,
+    "projectId": 2,
+    "hiredAt": "2023-05-11"
   },
   {
     "id": 4,
@@ -89,7 +143,25 @@
       "name": "Robel-Corkery",
       "catchPhrase": "Multi-tiered zero tolerance productivity",
       "bs": "transition cutting-edge web services"
-    }
+    },
+    "role": "devops",
+    "skills": [
+      {
+        "name": "Docker",
+        "level": "junior"
+      },
+      {
+        "name": "SQL",
+        "level": "mid"
+      },
+      {
+        "name": "TypeScript",
+        "level": "senior"
+      }
+    ],
+    "available": true,
+    "projectId": null,
+    "hiredAt": "2023-07-16"
   },
   {
     "id": 5,
@@ -112,7 +184,25 @@
       "name": "Keebler LLC",
       "catchPhrase": "User-centric fault-tolerant solution",
       "bs": "revolutionize end-to-end systems"
-    }
+    },
+    "role": "manager",
+    "skills": [
+      {
+        "name": "Figma",
+        "level": "mid"
+      },
+      {
+        "name": "CI/CD",
+        "level": "senior"
+      },
+      {
+        "name": "RxJS",
+        "level": "junior"
+      }
+    ],
+    "available": false,
+    "projectId": 16,
+    "hiredAt": "2023-09-21"
   },
   {
     "id": 6,
@@ -135,7 +225,25 @@
       "name": "Considine-Lockman",
       "catchPhrase": "Synchronised bottom-line interface",
       "bs": "e-enable innovative applications"
-    }
+    },
+    "role": "desarrollador",
+    "skills": [
+      {
+        "name": "Testing",
+        "level": "senior"
+      },
+      {
+        "name": "Angular",
+        "level": "junior"
+      },
+      {
+        "name": "Docker",
+        "level": "mid"
+      }
+    ],
+    "available": true,
+    "projectId": null,
+    "hiredAt": "2023-11-26"
   },
   {
     "id": 7,
@@ -158,7 +266,25 @@
       "name": "Johns Group",
       "catchPhrase": "Configurable multimedia task-force",
       "bs": "generate enterprise e-tailers"
-    }
+    },
+    "role": "diseñador",
+    "skills": [
+      {
+        "name": "SQL",
+        "level": "junior"
+      },
+      {
+        "name": "TypeScript",
+        "level": "mid"
+      },
+      {
+        "name": "Figma",
+        "level": "senior"
+      }
+    ],
+    "available": false,
+    "projectId": 10,
+    "hiredAt": "2023-01-03"
   },
   {
     "id": 8,
@@ -181,7 +307,25 @@
       "name": "Abernathy Group",
       "catchPhrase": "Implemented secondary concept",
       "bs": "e-enable extensible e-tailers"
-    }
+    },
+    "role": "qa",
+    "skills": [
+      {
+        "name": "CI/CD",
+        "level": "mid"
+      },
+      {
+        "name": "RxJS",
+        "level": "senior"
+      },
+      {
+        "name": "Testing",
+        "level": "junior"
+      }
+    ],
+    "available": true,
+    "projectId": null,
+    "hiredAt": "2023-03-08"
   },
   {
     "id": 9,
@@ -204,7 +348,25 @@
       "name": "Yost and Sons",
       "catchPhrase": "Switchable contextually-based project",
       "bs": "aggregate real-time technologies"
-    }
+    },
+    "role": "devops",
+    "skills": [
+      {
+        "name": "Angular",
+        "level": "senior"
+      },
+      {
+        "name": "Docker",
+        "level": "junior"
+      },
+      {
+        "name": "SQL",
+        "level": "mid"
+      }
+    ],
+    "available": false,
+    "projectId": 4,
+    "hiredAt": "2023-05-13"
   },
   {
     "id": 10,
@@ -227,6 +389,24 @@
       "name": "Hoeger LLC",
       "catchPhrase": "Centralized empowering task-force",
       "bs": "target end-to-end models"
-    }
+    },
+    "role": "manager",
+    "skills": [
+      {
+        "name": "TypeScript",
+        "level": "junior"
+      },
+      {
+        "name": "Figma",
+        "level": "mid"
+      },
+      {
+        "name": "CI/CD",
+        "level": "senior"
+      }
+    ],
+    "available": true,
+    "projectId": null,
+    "hiredAt": "2023-07-18"
   }
 ]

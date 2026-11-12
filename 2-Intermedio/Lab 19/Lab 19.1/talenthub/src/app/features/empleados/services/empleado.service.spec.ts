@@ -13,6 +13,11 @@ const usuario = (id: number, name = `Usuario ${id}`) => ({
   phone: '',
   website: '',
   company: { name: 'X' },
+  role: 'qa',
+  skills: [{ name: 'Cypress', level: 'senior' }],
+  available: false,
+  projectId: 7,
+  hiredAt: '2026-02-10',
 });
 
 describe('EmpleadoService', () => {
@@ -183,14 +188,21 @@ describe('EmpleadoService', () => {
       proyectoActualId: 7,
     };
 
-    it('envía a la API solo name y email', () => {
+    it('envía a la API el nombre, el email y todos los datos de empleado', () => {
       servicio.crear(datos).subscribe();
       const req = http.expectOne({ method: 'POST', url: API });
-      expect(req.request.body).toEqual({ name: 'Marta Ruiz', email: 'marta@example.com' });
+      expect(req.request.body).toEqual({
+        name: 'Marta Ruiz',
+        email: 'marta@example.com',
+        role: 'qa',
+        skills: [{ name: 'Cypress', level: 'senior' }],
+        available: false,
+        projectId: 7,
+      });
       req.flush(usuario(11, 'Marta Ruiz'));
     });
 
-    it('devuelve el empleado con el id de la API y conserva los datos que la API no guarda', () => {
+    it('devuelve el empleado tal como lo guardó la API (id, datos de empleado y fecha de incorporación)', () => {
       let creado: Empleado | undefined;
       servicio.crear(datos).subscribe((e) => (creado = e));
       http.expectOne(API).flush({ ...usuario(11, 'Marta Ruiz'), email: 'marta@example.com' });
@@ -200,6 +212,15 @@ describe('EmpleadoService', () => {
       expect(creado?.habilidades).toEqual(datos.habilidades);
       expect(creado?.disponible).toBeFalse();
       expect(creado?.proyectoActualId).toBe(7);
+      expect(creado?.fechaIncorporacion).toEqual(new Date(2026, 1, 10));
+    });
+
+    it('lo que devuelve la API manda sobre lo que se envió (no se conserva nada del argumento)', () => {
+      let creado: Empleado | undefined;
+      servicio.crear(datos).subscribe((e) => (creado = e));
+      http.expectOne(API).flush({ ...usuario(11, 'Marta Ruiz'), role: 'manager', projectId: 9 });
+      expect(creado?.rol).toBe('manager');
+      expect(creado?.proyectoActualId).toBe(9);
     });
 
     it('falla si la API responde algo que no es un empleado', () => {

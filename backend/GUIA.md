@@ -19,13 +19,14 @@ aplicación Angular lo use en lugar de las APIs públicas. No hace falta saber P
 Las prácticas usan por defecto una API pública de mentira (JSONPlaceholder). Funciona sin instalar nada, pero
 **no guarda los cambios**: lo que creas, editas o borras se pierde al recargar la página.
 
-El backend de esta carpeta es una API propia, local, que **sí los guarda** (en un archivo SQLite). Ofrece dos
-recursos, con el mismo formato que JSONPlaceholder:
+El backend de esta carpeta es una API propia, local, que **sí los guarda** (en un archivo SQLite). Ofrece tres
+recursos; los dos primeros, con el mismo formato que JSONPlaceholder (más campos opcionales):
 
 | Recurso | Qué es | Lo usan |
 | --- | --- | --- |
-| `/users` | Usuarios | Lab 10 y Lab 10.1 |
+| `/users` | Usuarios (en TalentHub, también empleados: rol, habilidades, disponibilidad y proyecto) | Lab 10, Lab 10.1 y TalentHub |
 | `/todos` | Tareas de un usuario | Lab 10 |
+| `/projects` | Proyectos de TalentHub, con su equipo | TalentHub (Lab 20 y Lab 19) |
 
 Las tareas pertenecen a un usuario: **si borras un usuario, se borran también sus tareas**.
 
@@ -258,7 +259,9 @@ Se hace con parámetros en la URL (todos opcionales):
 | `userId` | `/todos?userId=2` | Solo las tareas de ese usuario |
 | `completed` | `/todos?completed=true` | Solo completadas (o `false`: pendientes) |
 | `priority` | `/todos?priority=high` | Solo las de esa prioridad (`high`, `medium` o `low`; otro valor → 422) |
-| `q` | `/todos?q=comprar` | Busca en el título (en `/users`, en nombre, usuario y email) |
+| `q` | `/todos?q=comprar` | Busca en el título (en `/users`, en nombre, usuario y email; en `/projects`, en nombre y cliente) |
+| `role`, `available`, `projectId` | `/users?role=qa&available=true`, `/users?projectId=8` | Filtros de empleado: por rol, por disponibilidad y el equipo de un proyecto |
+| `status` | `/projects?status=active` | Solo los proyectos en ese estado (`active`, `paused` o `completed`) |
 | `_page` y `_limit` | `/todos?_page=2&_limit=10` | Paginación (`_limit` máximo: 200 en tareas, 100 en usuarios) |
 
 La cabecera `X-Total-Count` de la respuesta da el total **ya filtrado y antes de paginar**. Para leerla hay que

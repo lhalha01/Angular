@@ -5,13 +5,15 @@ import { NOTIFICAR_404 } from '@core/interceptors/http-context';
 import { Proyecto } from '../models/proyecto.model';
 import { ProyectoService } from './proyecto.service';
 
-const API = 'http://localhost:8000/todos';
-const todo = (id: number, completed = false) => ({
+const API = 'http://localhost:8000/projects';
+const todo = (id: number, status = 'active') => ({
   id,
-  userId: 1,
-  title: `Proyecto ${id}`,
-  completed,
-  createdAt: '2026-01-01T00:00:00.000Z',
+  name: `Proyecto ${id}`,
+  client: 'Acme Corp',
+  status,
+  startDate: '2026-01-01',
+  endDate: status === 'completed' ? '2026-03-01' : null,
+  memberIds: [id],
 });
 
 describe('ProyectoService', () => {
@@ -25,13 +27,13 @@ describe('ProyectoService', () => {
   });
   afterEach(() => http.verify());
 
-  it('getAll pide las 20 primeras tareas de /todos y las mapea a Proyecto', () => {
+  it('getAll pide todos los proyectos de /projects y los mapea a Proyecto', () => {
     let resultado: Proyecto[] = [];
     servicio.getAll().subscribe((p) => (resultado = p));
     const req = http.expectOne((r) => r.url === API);
     expect(req.request.method).toBe('GET');
-    expect(req.request.params.get('_limit')).toBe('20');
-    req.flush([todo(1), todo(2, true)]);
+    expect(req.request.params.keys()).toEqual([]);
+    req.flush([todo(1), todo(2, 'completed')]);
     expect(resultado.map((p) => [p.nombre, p.estado])).toEqual([
       ['Proyecto 1', 'activo'],
       ['Proyecto 2', 'completado'],

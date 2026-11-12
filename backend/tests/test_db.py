@@ -78,10 +78,10 @@ CREATE INDEX idx_todos_user_id ON todos (user_id);
 def make_legacy_db(db_path: Path) -> None:
     """Base de datos como la dejaba la versión anterior: sin clave foránea ni `user_version`.
     Tiene los usuarios 2 y 3, tareas suyas y tres huérfanas (del usuario 1, ya borrado, y del 99)."""
-    from app.db import USERS_SCHEMA
+    from app.db import USERS_SCHEMA_V4
 
     conn = sqlite3.connect(db_path)
-    conn.executescript(USERS_SCHEMA + OLD_TODOS_SCHEMA)
+    conn.executescript(USERS_SCHEMA_V4 + OLD_TODOS_SCHEMA)
     conn.executemany(
         "INSERT INTO users (id, name, email) VALUES (?, ?, ?)",
         [(2, "Dos", "dos@x.com"), (3, "Tres", "tres@x.com")],

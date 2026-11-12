@@ -5,7 +5,7 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from app.db import SCHEMA_VERSION, USERS_SCHEMA, init_db
+from app.db import SCHEMA_VERSION, USERS_SCHEMA_V4, init_db
 from app.main import create_app
 
 NEW_TODO = {"userId": 1, "title": "Preparar la demo", "completed": False}
@@ -170,7 +170,7 @@ def make_v3_db(db_path: Path) -> None:
     """Base de datos del esquema 3: con prioridad pero sin los campos de planificación."""
     conn = sqlite3.connect(db_path)
     conn.executescript(
-        USERS_SCHEMA
+        USERS_SCHEMA_V4
         + """
         CREATE TABLE todos (
             id         INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -205,7 +205,7 @@ class TestMigracion:
         make_v3_db(db_path)
         init_db(db_path)
         conn = sqlite3.connect(db_path)
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION == 4
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION == 5
         conn.close()
         client = TestClient(create_app(db_path))
         client.patch("/todos/1", json={"tags": ["a"], "description": "hola"})
