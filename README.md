@@ -3,6 +3,9 @@
 Repositorio con las prácticas del curso de Angular, organizado por niveles. Cada laboratorio vive en su
 carpeta `Lab NN`, con su enunciado (`Lab NN.md`) y, cuando corresponde, el proyecto Angular que lo resuelve.
 
+> **¿Retomas el trabajo o vas a empezar el nivel Avanzado?** Lee antes la [`BITACORA.md`](./BITACORA.md): estado, reglas
+> del curso, decisiones tomadas, trampas conocidas y lo que hay que decidir con el usuario.
+
 ## Estructura del repositorio
 
 ```text
