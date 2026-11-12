@@ -16,7 +16,7 @@ carpeta `Lab NN`, con su enunciado (`Lab NN.md`) y, cuando corresponde, el proye
 | Nivel | Carpeta | Laboratorios | Práctica final | Estado |
 | --- | --- | --- | --- | --- |
 | Básico | `1-Basico` | Lab 01 a Lab 09 | Lab 10 y Lab 10.1 | Completado |
-| Intermedio | `2-Intermedio` | Lab 11 a Lab 19 y Lab 20 | Lab 20.1 | En curso: Lab 11.1, 11.2, 12.1, 12.2, 13.1, 13.2, 14.1, 14.2, 15.1, 15.2, 16.1, 16.2, 17.1, 17.2, 18.1, 18.2, 19.1, 19.2 y Lab 20 hechos |
+| Intermedio | `2-Intermedio` | Lab 11 a Lab 19, Lab 20 y Lab 20.1 | — | Completo: Lab 11.1, 11.2, 12.1, 12.2, 13.1, 13.2, 14.1, 14.2, 15.1, 15.2, 16.1, 16.2, 17.1, 17.2, 18.1, 18.2, 19.1, 19.2, Lab 20 y Lab 20.1 hechos |
 | Avanzado | `3-Avanzado` | Lab 21 a Lab 28 | Lab 29 | Pendiente (enunciados por añadir) |
 
 ## Proyectos del nivel Básico
@@ -65,6 +65,7 @@ dividen en dos carpetas, cada una con su propio enunciado extraído de él:
 | Lab 19.1 | `2-Intermedio/Lab 19/Lab 19.1/talenthub` | TalentHub: performance y calidad (dashboard con `@defer`, OnPush, `track`, análisis de bundle, lint y Lighthouse en `AUDIT.md`) | Hecho; es la versión final de la serie 11.1-19.1 y, tras adaptar el backend, usa `/users` (empleados) y `/projects` |
 | Lab 19.2 | `2-Intermedio/Lab 19/Lab 19.2` | Performance y calidad en la aplicación de tareas (estadísticas diferidas con `@defer`, análisis de bundle, lint y Lighthouse) | Hecho sobre la copia del Lab 10 de `2-Intermedio/Lab 10/tareas` (véase su README) |
 | Lab 20 | `2-Intermedio/Lab 20/talenthub` | Práctica final: TalentHub completo (directorio, perfil, alta, proyectos con equipo, dashboard), autónoma, con `README.md` y `DECISION_LOG.md` | Hecho; proyecto independiente con su propio `node_modules` |
+| Lab 20.1 | `2-Intermedio/Lab 20.1/talenthub` | Práctica final de refactor: auditoría de una base con 8 deficiencias (`base/`), refactor guiado por métricas (82 hallazgos → 0, lint 42 → 0, cobertura 91 % → 100 %), `AUDIT.md` y `DECISION_LOG.md` | Hecho; proyecto independiente con su propio `node_modules` |
 
 ## Estructura de dependencias
 
@@ -84,7 +85,7 @@ Estado actual por nivel:
 | Nivel | Dependencias |
 | --- | --- |
 | Básico (`1-Basico`) | Workspace propio: `1-Basico/package.json` con `workspaces: ["Lab 0*/*"]`, su lockfile y su `node_modules`, compartidos por Lab 01 a Lab 09. Lab 10 y Lab 10.1 quedan fuera del patrón y son autónomos. |
-| Intermedio (`2-Intermedio`) | Workspace propio: `2-Intermedio/package.json` con `workspaces: ["Lab 1[1-9]/Lab 1[1-9].*/*", "Lab 1[1-9]/*"]`, su lockfile y su `node_modules`, compartidos por los Labs 11 a 19 (el primer patrón cubre los laboratorios partidos en `.1` y `.2`, que tienen un nivel más de carpetas). Lab 20 (ya hecho) y Lab 20.1 quedan fuera del patrón y son autónomos. |
+| Intermedio (`2-Intermedio`) | Workspace propio: `2-Intermedio/package.json` con `workspaces: ["Lab 1[1-9]/Lab 1[1-9].*/*", "Lab 1[1-9]/*"]`, su lockfile y su `node_modules`, compartidos por los Labs 11 a 19 (el primer patrón cubre los laboratorios partidos en `.1` y `.2`, que tienen un nivel más de carpetas). Lab 20 y Lab 20.1 (ya hechos) quedan fuera del patrón y son autónomos. |
 | Avanzado (`3-Avanzado`) | **Sin workspace todavía**: solo contiene las carpetas de los labs con sus enunciados. |
 
 No hay `package.json` en la raíz del repositorio.

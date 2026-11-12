@@ -1,0 +1,14 @@
+<header class="navbar">
+  <a class="logo" routerLink="/dashboard" aria-label="TalentHub, ir al dashboard">
+    <span class="logo__marca" aria-hidden="true">T</span>
+    <span class="logo__texto">TalentHub</span>
+  </a>
+
+  <nav aria-label="Navegación principal">
+    <a routerLink="/empleados" routerLinkActive="activo">Directorio</a>
+    <a routerLink="/proyectos" routerLinkActive="activo">Proyectos</a>
+    <a routerLink="/dashboard" routerLinkActive="activo">Dashboard</a>
+  </nav>
+
+  <button type="button" class="salir" (click)="cerrarSesion()">Cerrar sesión</button>
+</header>
