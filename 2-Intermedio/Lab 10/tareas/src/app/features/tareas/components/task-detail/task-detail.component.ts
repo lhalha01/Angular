@@ -37,7 +37,7 @@ import { StateMessageComponent } from '@shared/components/state-message/state-me
         @if (t.tags?.length) {
           <div class="row">
             <span class="label">Etiquetas</span>
-            <span class="tags">@for (tag of t.tags; track tag) { <span class="tag">{{ tag }}</span> }</span>
+            <span class="tags">@for (tag of t.tags; track $index) { <span class="tag">{{ tag }}</span> }</span>
           </div>
         }
         @if (t.createdAt) {

@@ -1,0 +1,15 @@
+Lab 19.1 TalentHub
+
+Bundle inicial: 298.20 kB -> 306.84 kB (sin comprimir); 96.57 kB -> 99.54 kB (gzip nivel 9)
+main.js: 3.83 kB (1.89 kB gzip)
+Chunk lazy dashboard: chunk-YQWJUUCF.js 3.06 kB (1.37 kB gzip)
+Chunk lazy empleados: chunk-VSOPZPZB.js 53.28 kB (14.29 kB gzip)
+Chunk lazy proyectos: chunk-K5YLPUBE.js 2.02 kB (1.02 kB gzip)
+Dependencias mas pesadas: @angular/core 131.07 kB, @angular/router 72.01 kB, @angular/forms 38.80 kB
+
+$ npx ng lint
+Linting "talenthub-lab-19"...
+
+All files pass linting.
+
+Lighthouse (mediana de 3) antes -> despues: performance 100 -> 99, accessibility 100 -> 100, best practices 100 -> 100, SEO 82 -> 82, FCP 603 -> 621 ms, LCP 673 -> 808 ms, TBT 0 -> 0 ms, CLS 0 -> 0

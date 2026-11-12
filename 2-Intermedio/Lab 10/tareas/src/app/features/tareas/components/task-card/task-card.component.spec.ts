@@ -25,6 +25,11 @@ describe('TaskCardComponent', () => {
     expect(el.textContent).toContain('05/03/2024');
   });
 
+  it('shows repeated tags without problems (they are tracked by position, not by value)', () => {
+    const { el } = setup({ ...TASK, tags: ['demo', 'demo', 'angular'] });
+    expect(Array.from(el.querySelectorAll('.tag')).map((t) => t.textContent?.trim())).toEqual(['demo', 'demo', 'angular']);
+  });
+
   it('links to the detail page', () => {
     const link = setup().el.querySelector<HTMLAnchorElement>('a')!;
     expect(link.getAttribute('href')).toBe('/tasks/7');

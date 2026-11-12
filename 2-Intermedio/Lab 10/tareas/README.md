@@ -134,7 +134,7 @@ Alias de rutas (`tsconfig.json`): `@core/*`, `@shared/*` y `@features/*`. La arq
 - **Ciclo de vida**: `TaskFormComponent.ngOnChanges` reinicia el formulario con una copia cada vez que el padre pasa
   un valor inicial; `TaskListComponent.ngOnInit` lee los filtros de la URL; `ToastService.ngOnDestroy` cancela los
   temporizadores pendientes. El resto del estado reactivo usa signals y `effect()`, que se limpian solos.
-- **Pruebas**: `npm test` ejecuta 380 tests (cobertura ≈99 % de líneas; las líneas, al 100 %), incluida una prueba de integración
+- **Pruebas**: `npm test` ejecuta 389 tests (cobertura ≈99 % de líneas; las líneas, al 100 %), incluida una prueba de integración
   de las rutas reales. 40 de ellos cubren el modo del backend propio: ids y fechas del servidor, errores que
   llegan al usuario, "Deshacer" contra la API (incluido el 409) y los formularios de crear y editar.
 - **UserService** (servicio mock de `Servicios_mock.md`): listar, obtener por id, crear (POST) y eliminar (DELETE)
@@ -184,6 +184,7 @@ Alias de rutas (`tsconfig.json`): `@core/*`, `@shared/*` y `@features/*`. La arq
 | Formulario de tarea con **Reactive Forms** (`FormBuilder`, `FormArray` de etiquetas, validador cruzado de fechas) y los campos nuevos `description`, `startDate`, `endDate` y `tags` (backend v4): modelo, DTO, mapper, tarjeta, detalle y botón desactivado mientras se guarda | 16.2 |
 | Estado de aplicación: `TaskStateService` (señales de solo lectura y `computed` `pending`, `completed` y `total`) y `TasksFacade`, que sustituye a `TaskActions` y es lo único que inyectan los componentes y el resolver (regla de ESLint); crear, editar y eliminar actualizan la vista sin recargar | 17.2 |
 | Testing pragmático: pruebas de la lista con la fachada simulada (`task-list.component.facade-simulada.spec.ts`) y cobertura documentada de los servicios, el guard, el validador de fechas y la lista | 18.2 |
+| Performance y calidad: estadísticas de las tareas (`TaskStatsComponent`) diferidas con `@defer (on viewport; prefetch on idle)`, `track $index` en las etiquetas repetidas y análisis del bundle, de ESLint y de Lighthouse | 19.2 |
 
 ### Diferencias del Lab 12.2 con su enunciado
 
@@ -254,6 +255,17 @@ Alias de rutas (`tsconfig.json`): `@core/*`, `@shared/*` y `@features/*`. La arq
 - **El guard** es un `CanMatchFn` (`authGuard`), con el 100 %: con sesión pasa y sin ella redirige a `/login` con `returnUrl`.
 - **Validadores:** hay uno propio, `dateRange` (el enunciado habla de `fechasValidas`), con casos positivos (fin posterior, mismo día, alguna fecha vacía) y negativos (fin anterior, no legible como fecha, error en el grupo).
 - **La evidencia es la salida real de `ng test --code-coverage`** y una tabla con la cobertura de cada artefacto sacada del informe generado; no es una captura de la ventana del terminal.
+
+### Diferencias del Lab 19.2 con su enunciado
+
+- **`OnPush` y `track` ya estaban.** Los 16 componentes de la aplicación llevan `ChangeDetectionStrategy.OnPush` (lo comprueba la regla `onpush` de `npm run check:architecture`) y los 12 `@for` tienen `track`; Angular además exige uno en cada `@for`. Lo único que se cambió: las etiquetas de la tarjeta y del detalle pasan de `track tag` a `track $index`, porque son cadenas sin id y se pueden repetir (el servidor no lo impide), lo que con `track tag` daría claves duplicadas. Las demás listas (`task.id`, `u.id`, `toast.id`, `p.value`…) no hizo falta tocarlas.
+- **`@defer` para un bloque no crítico:** se ha creado `TaskStatsComponent` (total, pendientes, completadas, progreso y reparto por prioridad, calculado con `computed()` sobre todas las tareas) y la lista lo muestra bajo la paginación con `@defer (on viewport; prefetch on idle)`, con `@loading` y `@placeholder`. Es un chunk propio de 2,93 kB (1,20 kB gzip) que solo se descarga cuando el navegador está ocioso y se pinta al entrar en pantalla. Las estadísticas siguen al día cuando cambia el estado (crear, eliminar o cambiar una tarea). Se prueba con `DeferBlockBehavior.Manual` (`task-list.component.defer.spec.ts`).
+- **Bundle:** el `main.js` pesa 12,21 kB (4,79 kB gzip) y el total inicial 334,51 kB (109,17 kB gzip) frente a los 325,74 kB (105,63 kB) de antes: 8,8 kB más, que es el runtime de `@defer`; el criterio de < 250 kB gzip se cumple de sobra. `webpack-bundle-analyzer` no sirve con este builder (esbuild): el análisis se hizo con el metafile de `ng build --stats-json` (tamaños, chunks, dependencias). Las tres dependencias más pesadas son `@angular/core` (138,56 kB), `@angular/router` (73,04 kB) y `@angular/forms` (42,65 kB); no hay librerías de terceros fuera de Angular, RxJS, `tslib` y `zone.js`.
+- **ESLint:** `ng lint` ya devolvía 0 errores y 0 advertencias; no hace falta plan de mejora.
+- **Lighthouse (antes → después), `/tasks` con sesión, escritorio, mediana de 3:** rendimiento 98 → 98, accesibilidad 100, buenas prácticas 100, SEO 82; LCP 1065 → 1123 ms y CLS 0,021 en ambos. No hay mejora: `@defer` no acelera una página que ya rinde 98, y su runtime la hace un poco más pesada. El SEO 82 son la `<meta name="description">` que falta y el `robots.txt` que el servidor estático de la prueba no tiene.
+- **Las capturas son salidas reales**, no de la pestaña de Chrome: el análisis sale de `stats.json` y de los archivos generados, el lint de `ng lint` y Lighthouse del paquete `lighthouse` (v12) contra el build de producción y el backend local con una base de datos temporal (`BACKEND_DB`).
+
+Evidencias del Lab 19.2 en [`../../Lab 19/Lab 19.2/evidencias/`](../../Lab%2019/Lab%2019.2/evidencias/) (análisis del bundle, resumen de lint y Lighthouse antes/después).
 
 Evidencias del Lab 18.2 en [`../../Lab 18/Lab 18.2/evidencias/`](../../Lab%2018/Lab%2018.2/evidencias/) (resumen de cobertura de Karma y cobertura de los artefactos).
 

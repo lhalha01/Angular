@@ -10,6 +10,7 @@ import { PaginatorComponent } from '@shared/components/paginator/paginator.compo
 import { PageSize, paginate } from '@shared/components/paginator/pagination';
 import { StateMessageComponent } from '@shared/components/state-message/state-message.component';
 import { TaskCardComponent } from '../task-card/task-card.component';
+import { TaskStatsComponent } from '../task-stats/task-stats.component';
 import { TaskToolbarComponent } from '../task-toolbar/task-toolbar.component';
 import { DEFAULT_LIST_STATE, readParams, toParams } from './task-list-params';
 import { effectiveSearch, filterAndSort, hasActiveFilters, SortKey, TaskQuery, ViewMode } from './task-query';
@@ -30,7 +31,7 @@ const VIEWS: readonly ViewMode[] = ['cards', 'list'];
  */
 @Component({
   selector: 'app-task-list',
-  imports: [RouterLink, TaskToolbarComponent, TaskCardComponent, PaginatorComponent, StateMessageComponent],
+  imports: [RouterLink, TaskToolbarComponent, TaskCardComponent, TaskStatsComponent, PaginatorComponent, StateMessageComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="panel">
@@ -94,6 +95,15 @@ const VIEWS: readonly ViewMode[] = ['cards', 'list'];
             </div>
 
             <app-paginator [page]="paged().page" (pageChange)="page.set($event)" [(pageSize)]="pageSize" [totalPages]="paged().totalPages" />
+
+            <!-- No es crítico para el primer pintado: su código se descarga en reposo y se muestra al entrar en pantalla. -->
+            @defer (on viewport; prefetch on idle) {
+              <app-task-stats [tasks]="allTasks()" />
+            } @loading {
+              <div class="stats-skeleton" role="status">Cargando estadísticas…</div>
+            } @placeholder {
+              <div class="stats-skeleton" aria-hidden="true"></div>
+            }
           }
         }
       }
@@ -108,6 +118,7 @@ const VIEWS: readonly ViewMode[] = ['cards', 'list'];
     .link { border: none; background: none; padding: 0; color: var(--accent-text); font-weight: 600; cursor: pointer; text-decoration: underline; }
     .task-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
     .task-list--rows { grid-template-columns: 1fr; gap: 0.6rem; }
+    .stats-skeleton { min-height: 11rem; margin-top: 1.5rem; padding: 1rem; border-radius: 0.75rem; background: rgba(148, 163, 184, 0.15); color: var(--text-dim); }
   `,
 })
 export class TaskListComponent implements OnInit {

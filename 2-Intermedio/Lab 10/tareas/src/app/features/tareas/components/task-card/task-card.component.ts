@@ -38,7 +38,7 @@ import { TaskStatusPipe } from '@shared/pipes/task-status.pipe';
       <p>Prioridad: <span class="priority priority--{{ t.priority }}">{{ priorityLabel() }}</span></p>
       @if (t.tags?.length) {
         <p class="tags">
-          @for (tag of t.tags; track tag) {
+          @for (tag of t.tags; track $index) {
             <span class="tag">{{ tag }}</span>
           }
         </p>

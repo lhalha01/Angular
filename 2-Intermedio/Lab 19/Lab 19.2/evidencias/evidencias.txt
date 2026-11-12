@@ -1,0 +1,13 @@
+Lab 19.2 Tareas
+
+Bundle inicial: 325.74 kB -> 334.51 kB (sin comprimir); 105.63 kB -> 109.17 kB (gzip nivel 9)
+main.js: 12.21 kB (4.79 kB gzip)
+Chunk lazy tareas: chunk-ZYI2X7UE.js 1.08 kB (0.56 kB gzip)
+Dependencias mas pesadas: @angular/core 138.56 kB, @angular/router 73.04 kB, @angular/forms 42.65 kB
+
+$ npx ng lint
+Linting "tareas"...
+
+All files pass linting.
+
+Lighthouse (mediana de 3) antes -> despues: performance 98 -> 98, accessibility 100 -> 100, best practices 100 -> 100, SEO 82 -> 82, FCP 705 -> 716 ms, LCP 1065 -> 1123 ms, TBT 0 -> 0 ms, CLS 0.021 -> 0.021
