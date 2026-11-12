@@ -46,9 +46,11 @@ cd "1-Basico/Lab 10.1/userManagerApp"
 npm run start:local      # http://localhost:4200/, hablando con http://localhost:8000
 ```
 
-Sin el backend en marcha, `npm run start:local` muestra el error de carga de la lista; `npm start` no
-lo necesita para nada. La configuración `local` cambia la URL de la API y el modo de `persistentApi` (véase
-`src/environments/`).
+**Detección automática:** al arrancar, la aplicación hace **una sola** comprobación (`GET /health`, máximo 1,5 s) y
+elige la fuente de datos: si el backend está activo, lo usa (los cambios se guardan); si no, usa JSONPlaceholder.
+Por eso basta con `npm start`: no hace falta `start:local`, y la aplicación no falla si el backend está apagado.
+Para cambiar de fuente hay que recargar la página (el mensaje de la consola indica cuál se eligió). Código en
+`src/environments/detect-backend.ts`; la URL y el modo `persistentApi` salen de ahí (véase `src/environments/`).
 
 ## Rutas
 

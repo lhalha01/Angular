@@ -33,6 +33,22 @@ main {
   text-decoration: none;
 }
 
+.source {
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+
+.source-local {
+  background: #dcfce7;
+  color: #166534;
+  border-color: #86efac;
+}
+
 nav {
   display: flex;
   gap: 1.5rem;

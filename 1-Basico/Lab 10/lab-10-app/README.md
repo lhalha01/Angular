@@ -42,8 +42,11 @@ cd "1-Basico/Lab 10/lab-10-app"
 npm run start:local      # http://localhost:4200/, hablando con http://localhost:8000
 ```
 
-`npm start` no necesita el backend para nada. Sin él, `npm run start:local` muestra el error de carga de la
-lista (con "Reintentar") y, al guardar, un aviso que sugiere comprobar que el backend está arrancado.
+**Detección automática:** al arrancar, la aplicación hace **una sola** comprobación (`GET /health`, máximo 1,5 s) y
+elige la fuente de datos: si el backend está activo, lo usa (los cambios se guardan); si no, usa JSONPlaceholder.
+Por eso basta con `npm start`: no hace falta `start:local`, y la aplicación no falla si el backend está apagado.
+Para cambiar de fuente hay que recargar la página (el mensaje de la consola indica cuál se eligió). Código en
+`src/environments/detect-backend.ts`.
 
 ## Rutas
 
