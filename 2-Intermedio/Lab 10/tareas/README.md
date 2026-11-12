@@ -134,7 +134,7 @@ Alias de rutas (`tsconfig.json`): `@core/*`, `@shared/*` y `@features/*`. La arq
 - **Ciclo de vida**: `TaskFormComponent.ngOnChanges` reinicia el formulario con una copia cada vez que el padre pasa
   un valor inicial; `TaskListComponent.ngOnInit` lee los filtros de la URL; `ToastService.ngOnDestroy` cancela los
   temporizadores pendientes. El resto del estado reactivo usa signals y `effect()`, que se limpian solos.
-- **Pruebas**: `npm test` ejecuta 376 tests (cobertura ≈99 % de líneas; las líneas, al 100 %), incluida una prueba de integración
+- **Pruebas**: `npm test` ejecuta 380 tests (cobertura ≈99 % de líneas; las líneas, al 100 %), incluida una prueba de integración
   de las rutas reales. 40 de ellos cubren el modo del backend propio: ids y fechas del servidor, errores que
   llegan al usuario, "Deshacer" contra la API (incluido el 409) y los formularios de crear y editar.
 - **UserService** (servicio mock de `Servicios_mock.md`): listar, obtener por id, crear (POST) y eliminar (DELETE)
@@ -183,6 +183,7 @@ Alias de rutas (`tsconfig.json`): `@core/*`, `@shared/*` y `@features/*`. La arq
 | Búsqueda reactiva contra la API (`debounceTime` + `distinctUntilChanged` + `switchMap`), prioridad de la tarea (modelo, formulario, tarjeta, detalle y filtro, también en la URL) y protección de doble envío con `exhaustMap` en el alta y la edición | 15.2 |
 | Formulario de tarea con **Reactive Forms** (`FormBuilder`, `FormArray` de etiquetas, validador cruzado de fechas) y los campos nuevos `description`, `startDate`, `endDate` y `tags` (backend v4): modelo, DTO, mapper, tarjeta, detalle y botón desactivado mientras se guarda | 16.2 |
 | Estado de aplicación: `TaskStateService` (señales de solo lectura y `computed` `pending`, `completed` y `total`) y `TasksFacade`, que sustituye a `TaskActions` y es lo único que inyectan los componentes y el resolver (regla de ESLint); crear, editar y eliminar actualizan la vista sin recargar | 17.2 |
+| Testing pragmático: pruebas de la lista con la fachada simulada (`task-list.component.facade-simulada.spec.ts`) y cobertura documentada de los servicios, el guard, el validador de fechas y la lista | 18.2 |
 
 ### Diferencias del Lab 12.2 con su enunciado
 
@@ -244,6 +245,17 @@ Alias de rutas (`tsconfig.json`): `@core/*`, `@shared/*` y `@features/*`. La arq
 - **`TaskService` sigue exportado en el barrel** de la feature, aunque hoy solo lo usa la fachada, y se exporta además `TasksFacade`.
 - **La evidencia no es una captura de Angular DevTools:** se leen los Signals reales de `TasksFacade` en la aplicación en ejecución (build de desarrollo) y se dibuja el árbol de componentes con sus nombres reales, antes y después de crear y de eliminar una tarea; el recorrido usó un backend con una base de datos temporal (`BACKEND_DB`), así que `backend/data/app.db` no cambia.
 - **`ng build`:** el initial total pasa de 329,38 a 329,48 kB (sin regresión relevante). El enunciado pide además `--stats-json`; no se ha usado porque la comparación se hizo con el resumen del build.
+
+### Diferencias del Lab 18.2 con su enunciado
+
+- **El código de la aplicación no cambia: solo se añade una prueba.** `task-list.component.facade-simulada.spec.ts` prueba la lista con la fachada simulada (un doble con señales que controla el test, como propone la Fase 4); `task-list.component.spec.ts` la sigue probando con la fachada y el servicio reales. Todo lo demás que pide el enunciado ya estaba cubierto por los laboratorios anteriores, así que el laboratorio documenta la cobertura más que subirla.
+- **Los nombres siguen en inglés** (`Task`, `TaskService`, `TasksFacade`, `ListaTareas` → `TaskListComponent`), no `Tarea`, `TareaService`, `TareasFacade` ni `ListaTareas`.
+- **Servicios (`features/tareas/services/`):** 100 % de líneas, ramas y funciones (el enunciado pide > 70 %). Se prueba contra el backend local y con la API pública, con `provideHttpClient()` + `provideHttpClientTesting()` en lugar de `HttpClientTestingModule`, obsoleto. El caso «404 → `null`» del enunciado lo cubren las pruebas de la base `InMemoryResource` (`in-memory-resource*.spec.ts`, de `getById`), y el mapeo del DTO, `task.mapper.spec.ts`.
+- **El guard** es un `CanMatchFn` (`authGuard`), con el 100 %: con sesión pasa y sin ella redirige a `/login` con `returnUrl`.
+- **Validadores:** hay uno propio, `dateRange` (el enunciado habla de `fechasValidas`), con casos positivos (fin posterior, mismo día, alguna fecha vacía) y negativos (fin anterior, no legible como fecha, error en el grupo).
+- **La evidencia es la salida real de `ng test --code-coverage`** y una tabla con la cobertura de cada artefacto sacada del informe generado; no es una captura de la ventana del terminal.
+
+Evidencias del Lab 18.2 en [`../../Lab 18/Lab 18.2/evidencias/`](../../Lab%2018/Lab%2018.2/evidencias/) (resumen de cobertura de Karma y cobertura de los artefactos).
 
 Evidencias del Lab 17.2 en [`../../Lab 17/Lab 17.2/evidencias/`](../../Lab%2017/Lab%2017.2/evidencias/) (árbol de componentes y Signals de la fachada, con crear y eliminar sin recargar).
 

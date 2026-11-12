@@ -16,7 +16,7 @@ carpeta `Lab NN`, con su enunciado (`Lab NN.md`) y, cuando corresponde, el proye
 | Nivel | Carpeta | Laboratorios | Práctica final | Estado |
 | --- | --- | --- | --- | --- |
 | Básico | `1-Basico` | Lab 01 a Lab 09 | Lab 10 y Lab 10.1 | Completado |
-| Intermedio | `2-Intermedio` | Lab 11 a Lab 19 | Lab 20 y Lab 20.1 | En curso: Lab 11.1, 11.2, 12.1, 12.2, 13.1, 13.2, 14.1, 14.2, 15.1, 15.2, 16.1, 16.2, 17.1 y 17.2 hechos |
+| Intermedio | `2-Intermedio` | Lab 11 a Lab 19 | Lab 20 y Lab 20.1 | En curso: Lab 11.1, 11.2, 12.1, 12.2, 13.1, 13.2, 14.1, 14.2, 15.1, 15.2, 16.1, 16.2, 17.1, 17.2, 18.1 y 18.2 hechos |
 | Avanzado | `3-Avanzado` | Lab 21 a Lab 28 | Lab 29 | Pendiente (enunciados por añadir) |
 
 ## Proyectos del nivel Básico
@@ -60,6 +60,8 @@ dividen en dos carpetas, cada una con su propio enunciado extraído de él:
 | Lab 16.2 | `2-Intermedio/Lab 16/Lab 16.2` | Formulario de tarea con Reactive Forms, fechas y etiquetas | Hecho sobre la copia del Lab 10 de `2-Intermedio/Lab 10/tareas`; añade `description`, `startDate`, `endDate` y `tags` al backend (véase su README) |
 | Lab 17.1 | `2-Intermedio/Lab 17/Lab 17.1/talenthub` | TalentHub: estado de empleados con Signals (`EmpleadoStateService`) y `EmpleadosFacade` | Hecho |
 | Lab 17.2 | `2-Intermedio/Lab 17/Lab 17.2` | Estado de tareas: `TaskStateService` y `TasksFacade` (sustituye a `TaskActions`) | Hecho sobre la copia del Lab 10 de `2-Intermedio/Lab 10/tareas` (véase su README) |
+| Lab 18.1 | `2-Intermedio/Lab 18/Lab 18.1/talenthub` | TalentHub: testing pragmático (cobertura de `EmpleadoService`, `authGuard`, el validador de email único y `DirectorioEmpleados`) | Hecho |
+| Lab 18.2 | `2-Intermedio/Lab 18/Lab 18.2` | Testing pragmático en la aplicación de tareas (lista con la fachada simulada y cobertura documentada) | Hecho sobre la copia del Lab 10 de `2-Intermedio/Lab 10/tareas` (véase su README) |
 
 ## Estructura de dependencias
 

@@ -1,0 +1,20 @@
+Executed 380 of 380 SUCCESS (3.483 secs / 3.218 secs)
+TOTAL: 380 SUCCESS
+
+=== Coverage summary ===============================
+Statements   : 99.69% ( 646/648 )
+Branches     : 96.93% ( 285/294 )
+Functions    : 100% ( 250/250 )
+Lines        : 100% ( 546/546 )
+================================================================================
+
+Servicios de tareas (features/tareas/services/)
+  task-state.service.ts: stm 100% br 100% fn 100% ln 100%
+  task.service.ts: stm 100% br 100% fn 100% ln 100%
+  tasks.facade.ts: stm 100% br 100% fn 100% ln 100%
+authGuard (core/guards/)
+  auth.guard.ts: stm 100% br 100% fn 100% ln 100%
+Validador de fechas (shared/validators/)
+  date-range.validator.ts: stm 100% br 100% fn 100% ln 100%
+TaskListComponent (features/tareas/components/task-list/)
+  task-list.component.ts: stm 100% br 100% fn 100% ln 100%

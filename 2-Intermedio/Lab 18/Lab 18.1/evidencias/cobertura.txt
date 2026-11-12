@@ -1,0 +1,20 @@
+Executed 245 of 245 SUCCESS (1.195 secs / 1.083 secs)
+TOTAL: 245 SUCCESS
+
+=== Coverage summary ===============================
+Statements   : 100% ( 335/335 )
+Branches     : 98.36% ( 120/122 )
+Functions    : 100% ( 131/131 )
+Lines        : 100% ( 271/271 )
+================================================================================
+
+Servicios de empleados (features/empleados/services/)
+  empleado-state.service.ts: stm 100% br 100% fn 100% ln 100%
+  empleado.service.ts: stm 100% br 100% fn 100% ln 100%
+  empleados.facade.ts: stm 100% br 100% fn 100% ln 100%
+authGuard (core/guards/)
+  auth.guard.ts: stm 100% br 100% fn 100% ln 100%
+Validador de email único (shared/validators/)
+  email-unico.validator.ts: stm 100% br 80% fn 100% ln 100%
+DirectorioEmpleados (features/empleados/components/directorio/)
+  directorio.component.ts: stm 100% br 100% fn 100% ln 100%
